@@ -49,7 +49,39 @@ partial class DemoModel : IDeepCopy<DemoModel>
 }
 ```
 
-## DeepEqual
+# DeepEqual
+
+Generates code for deep equal.
+
+## Example
+
+```
+namespace Demo.Models;
+
+[DeepEqual]
+public partial class DemoModel
+{
+    public string Name { get; set; } = "Peter";
+
+    public SubModel Sub { get; set; } = new SubModel();
+
+    [DeepEqualIgnore]
+    public int Num { get; set; } = 45;
+}
+
+// Generated
+
+partial class DemoModel : IDeepEqual<DemoModel>
+{
+    public bool DeepEqual(DemoModel? value)
+    {
+        if (value is null) return false;
+        return
+            Name == value.Name &&
+            Sub.DeepEqual(value.Sub);
+    }
+}
+```
 
 ## DeepMap 
 Mapping between Model and ViewModel trees
