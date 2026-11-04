@@ -43,7 +43,7 @@ partial class DemoModel : IDeepCopy<DemoModel>
         return DemoModel()
         {    
             Name = this.Name;
-            Sub = this.Sub.DeepCopy()
+            Sub = this.Sub?.DeepCopy()
         }
     }
 }
@@ -78,19 +78,19 @@ partial class DemoModel : IDeepEqual<DemoModel>
         if (value is null) return false;
         return
             Name == value.Name &&
-            Sub.DeepEqual(value.Sub);
+            (Sub is null && value.Sub is null) || (Sun is not null && Sub.DeepEqual(value.Sub);
     }
 }
 ```
 
-## DeepMap 
+# DeepMap 
 Mapping between Model and ViewModel trees
 * Custom converters
 
-### Examples
-#### Simple Types
+## Examples
+### Simple Types
 Synchronizing properties with simple data types between the Model and the ViewModel. 
-##### Model
+#### Model
 ```
 namespace Demo.Models;
 
