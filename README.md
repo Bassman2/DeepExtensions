@@ -16,16 +16,33 @@ The Deep Extentions are a collection of three Deep features based on Source Gene
 
 ## DeepCopy
 
+Generates code for deep copy.
+
+### Example
+
+```
+namespace Demo.Models;
+
+[DeepCopy]
+public partial class DemoModel
+{
+    public string Name { get; set; } = "Peter";
+
+    [DeepCopyIgnore]
+    public int Num { get; set; } = 45;
+}
+```
+
 ## DeepEqual
 
 ## DeepMap 
 Mapping between Model and ViewModel trees
 * Custom converters
 
-# Examples
-## Simple Types
+### Examples
+#### Simple Types
 Synchronizing properties with simple data types between the Model and the ViewModel. 
-#### Model
+##### Model
 ```
 namespace Demo.Models;
 
