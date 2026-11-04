@@ -31,6 +31,19 @@ public partial class DemoModel
     [DeepCopyIgnore]
     public int Num { get; set; } = 45;
 }
+
+// Generated
+
+partial class DemoModel : IDeepCopy<DemoModel>
+{
+    public DemoModel DeepCopy()
+    {
+        return DemoModel()
+        {    
+            Name = this.Name;
+        }
+    }
+}
 ```
 
 ## DeepEqual
