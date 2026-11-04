@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace Deep.SourceGenerators;
+namespace DeepExtensions.SourceGenerators;
 
 partial class DeepGenerator 
 {

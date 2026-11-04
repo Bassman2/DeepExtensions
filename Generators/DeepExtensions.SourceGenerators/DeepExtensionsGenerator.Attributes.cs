@@ -1,22 +1,47 @@
-﻿using Microsoft.CodeAnalysis;
+﻿
+using Microsoft.CodeAnalysis;
 
-namespace Deep.SourceGenerators;
+namespace DeepExtensions.SourceGenerators;
 
 partial class DeepGenerator
 {
     protected void CreateAttributes(IncrementalGeneratorPostInitializationContext context)
     {
-        context.AddSource($"ObservableModelAttributes.g.cs",
+        context.AddSource($"DeepExtensionsAttributes.g.cs",
             """
-            namespace Deep;
+            namespace DeepExtensions;
+            
+            [AttributeUsage(AttributeTargets.Class)]
+            public class DeepCopyAttribute(): Attribute
+            { }
 
-            public enum DeepType { All, Copy, Equal };
+            [AttributeUsage(AttributeTargets.Property)]
+            public class DeepCopyIgnoreAttribute(): Attribute
+            { }
 
             [AttributeUsage(AttributeTargets.Class)]
-            public class DeepAttribute(DeepType deepType = DeepType.All): Attribute
+            public class DeepEqualAttribute(): Attribute
+            { }
+
+            [AttributeUsage(AttributeTargets.Property)]
+            public class DeepEqualIgnoreAttribute(): Attribute
+            { }
+
+            [AttributeUsage(AttributeTargets.Class)]
+            public class DeepMapAttribute(): Attribute
+            { }
+            
+            [AttributeUsage(AttributeTargets.Class)]
+            public class DeepMapIgnoreAttribute(): Attribute
+            { }
+
+            [AttributeUsage(AttributeTargets.Class)]
+            public class DeepMapPropertyAttribute(string name): Attribute
             { 
-                public DeepType DeepType { get; } = modelType;
+                public string Name { get; } = name;
             }
+            
+
             """);
     }
 

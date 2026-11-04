@@ -1,11 +1,7 @@
-﻿//#pragma warning disable IDE0017 
-
-
-
-namespace DeepGeneratorUnitTests;
+﻿namespace DeepExtensionsGeneratorUnitTests;
 
 [TestClass]
-public sealed class DeepGeneratorTests
+public sealed class DeepMapTests
 {
     /*
     #region Simple
@@ -267,4 +263,3 @@ public sealed class DeepGeneratorTests
     #endregion
     */
 }
-

@@ -12,7 +12,6 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-    <PackageReference Include="MvvmToolbox" Version="0.5.0" />
   </ItemGroup>
 
 </Project>

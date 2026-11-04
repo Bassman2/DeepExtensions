@@ -14,19 +14,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageReference Update="Microsoft.NET.Test.Sdk" Version="18.11.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="MSTest.TestAdapter" Version="4.4.1" />
+    <PackageReference Update="MSTest.TestAdapter" Version="4.5.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="MSTest.TestFramework" Version="4.4.1" />
+    <PackageReference Update="MSTest.TestFramework" Version="4.5.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Generators\Deep.SourceGenerators\Deep.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\Generators\DeepExtensions.SourceGenerators\DeepExtensions.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

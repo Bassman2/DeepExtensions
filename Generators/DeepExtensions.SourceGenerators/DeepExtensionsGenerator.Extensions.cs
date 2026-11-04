@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Xml.Linq;
 
-namespace Deep.SourceGenerators;
+namespace DeepExtensions.SourceGenerators;
 
 partial class DeepGenerator
 {

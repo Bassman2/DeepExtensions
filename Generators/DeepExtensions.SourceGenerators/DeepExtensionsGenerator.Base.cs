@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 
 
-namespace Deep.SourceGenerators;
+namespace DeepExtensions.SourceGenerators;
 
 [Generator(LanguageNames.CSharp)]
 public partial class DeepGenerator : IIncrementalGenerator

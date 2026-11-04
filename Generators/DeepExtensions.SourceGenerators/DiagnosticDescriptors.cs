@@ -1,6 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 
-namespace Deep.SourceGenerators;
+namespace DeepExtensions.SourceGenerators;
 
 public static class DiagnosticDescriptors
 {

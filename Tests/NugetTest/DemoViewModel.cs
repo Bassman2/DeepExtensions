@@ -1,12 +1,12 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using MvvmToolbox.ComponentModel;
+﻿//using CommunityToolkit.Mvvm.ComponentModel;
+//using MvvmToolbox.ComponentModel;
 
-namespace NugetTest;
+//namespace NugetTest;
 
-[ObservableModelObject(typeof(DemoModel))]
-public partial class DemoViewModel : ObservableObject           
-{
-    [ObservableProperty]
-    [ObservableModelProperty]
-    public partial string Name { get; set; }
-}
+//[ObservableModelObject(typeof(DemoModel))]
+//public partial class DemoViewModel : ObservableObject           
+//{
+//    [ObservableProperty]
+//    [ObservableModelProperty]
+//    public partial string Name { get; set; }
+//}

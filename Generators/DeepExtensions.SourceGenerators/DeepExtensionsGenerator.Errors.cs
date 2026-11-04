@@ -1,7 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Deep.SourceGenerators;
+namespace DeepExtensions.SourceGenerators;
 
 partial class DeepGenerator
 {
