@@ -14,11 +14,11 @@ The Deep Extentions are a collection of three Deep features based on Source Gene
 [Nuget package](https://www.nuget.org/packages/DeepExtensions)
 
 
-## DeepCopy
+# DeepCopy
 
 Generates code for deep copy.
 
-### Example
+## Example
 
 ```
 namespace Demo.Models;
