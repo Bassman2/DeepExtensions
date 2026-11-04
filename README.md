@@ -28,6 +28,8 @@ public partial class DemoModel
 {
     public string Name { get; set; } = "Peter";
 
+    public SubModel Sub { get; set; } = new SubModel();
+
     [DeepCopyIgnore]
     public int Num { get; set; } = 45;
 }
@@ -41,6 +43,7 @@ partial class DemoModel : IDeepCopy<DemoModel>
         return DemoModel()
         {    
             Name = this.Name;
+            Sub = this.Sub.DeepCopy()
         }
     }
 }
