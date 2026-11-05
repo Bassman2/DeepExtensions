@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace DeepExtensions.SourceGenerators;
 
-partial class DeepGenerator
+partial class DeepExtensionsGenerator
 {
 
     // Einfacher Fehler ohne direkten Codebezug

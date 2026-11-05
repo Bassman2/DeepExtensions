@@ -1,13 +1,6 @@
-﻿using Microsoft.CodeAnalysis;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Xml.Linq;
+﻿namespace DeepExtensions.SourceGenerators;
 
-namespace DeepExtensions.SourceGenerators;
-
-partial class DeepGenerator
+partial class DeepExtensionsGenerator
 {
     public string AssemblyName => Compilation.AssemblyName ?? "";
 
@@ -64,27 +57,27 @@ partial class DeepGenerator
 
     #region Enums
 
-    public IEnumerable<INamedTypeSymbol> GetAllEnums()
-    {
-        foreach (var enu in Enums)
-        {
-            if (Compilation.GetSemanticModel(enu.SyntaxTree).GetDeclaredSymbol(enu) is INamedTypeSymbol symbol)
-            {
-                yield return symbol;
-            }
-        }
-    }
+    //public IEnumerable<INamedTypeSymbol> GetAllEnums()
+    //{
+    //    foreach (var enu in Enums)
+    //    {
+    //        if (Compilation.GetSemanticModel(enu.SyntaxTree).GetDeclaredSymbol(enu) is INamedTypeSymbol symbol)
+    //        {
+    //            yield return symbol;
+    //        }
+    //    }
+    //}
 
-    public IEnumerable<INamedTypeSymbol> GetAllEnumsWithAttribute(INamedTypeSymbol attribute)
-    {
-        foreach (var enu in GetAllEnums())
-        {
-            if (enu.GetAttributes().Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, attribute)))
-            {
-                yield return enu;
-            }
-        }
-    }
+    //public IEnumerable<INamedTypeSymbol> GetAllEnumsWithAttribute(INamedTypeSymbol attribute)
+    //{
+    //    foreach (var enu in GetAllEnums())
+    //    {
+    //        if (enu.GetAttributes().Any(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, attribute)))
+    //        {
+    //            yield return enu;
+    //        }
+    //    }
+    //}
 
 
     #endregion

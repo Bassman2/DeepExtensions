@@ -1,12 +1,6 @@
-﻿using Microsoft.CodeAnalysis;
-using System;
-using System.Linq;
-using System.Reflection;
-using System.Text;
+﻿namespace DeepExtensions.SourceGenerators;
 
-namespace DeepExtensions.SourceGenerators;
-
-partial class DeepGenerator 
+partial class DeepExtensionsGenerator
 {
     private const string ObservableModelObjectAttributeName = "MvvmToolbox.ComponentModel.ObservableModelObjectAttribute";
     private const string ObservableModelPropertyAttributeName = "MvvmToolbox.ComponentModel.ObservableModelPropertyAttribute";

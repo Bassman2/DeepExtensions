@@ -5,7 +5,7 @@ using System.Text;
 
 namespace DeepExtensions.SourceGenerators;
 
-partial class DeepGenerator
+partial class DeepExtensionsGenerator
 {
     
     protected void CreateDebug()

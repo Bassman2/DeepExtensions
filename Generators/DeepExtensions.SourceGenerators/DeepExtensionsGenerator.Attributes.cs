@@ -1,10 +1,17 @@
-﻿
-using Microsoft.CodeAnalysis;
+﻿namespace DeepExtensions.SourceGenerators;
 
-namespace DeepExtensions.SourceGenerators;
-
-partial class DeepGenerator
+partial class DeepExtensionsGenerator
 {
+    private const string DeepCopyAttributeName = "DeepExtensions.DeepCopyAttribute";
+    private const string DeepCopyIgnoreAttributeName = "DeepExtensions.DeepCopyIgnoreAttribute";
+
+    private const string DeepEqualAttributeName = "DeepExtensions.DeepEqualAttribute";
+    private const string DeepEqualIgnoreAttributeName = "DeepExtensions.DeepEqualIgnoreAttribute";
+
+    private const string DeepMapAttributeName = "DeepExtensions.DeepMapAttribute";
+    private const string DeepMapIgnoreAttributeName = "DeepExtensions.DeepMapIgnoreAttribute";
+    private const string DeepMapPropertyAttributeName = "DeepExtensions.DeepMapPropertyAttribute";
+
     protected void CreateAttributes(IncrementalGeneratorPostInitializationContext context)
     {
         context.AddSource($"DeepExtensionsAttributes.g.cs",
@@ -40,7 +47,16 @@ partial class DeepGenerator
             { 
                 public string Name { get; } = name;
             }
-            
+
+            public interface IDeepCopy<T>
+            {
+                T DeepCopy();
+            }
+
+            public interface IDeepEqual<T>
+            {
+                bool IsDeepEqual(T other);
+            }
 
             """);
     }

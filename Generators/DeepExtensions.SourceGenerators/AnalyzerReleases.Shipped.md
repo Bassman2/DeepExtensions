@@ -2,6 +2,6 @@
 
 ### New Rules
 
-Rule ID | Category | Severity | Notes
---------|----------|----------|--------------------
-MTSG001 | Usage    | Error    | Missing partial modifier
+Rule ID    | Category | Severity | Notes
+-----------|----------|----------|--------------------
+DEEPGEN001 | Usage    | Error    | Class is not partial

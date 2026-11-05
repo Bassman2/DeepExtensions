@@ -11,7 +11,7 @@ using System.Text;
 namespace DeepExtensions.SourceGenerators;
 
 [Generator(LanguageNames.CSharp)]
-public partial class DeepGenerator : IIncrementalGenerator
+public partial class DeepExtensionsGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -28,8 +28,7 @@ public partial class DeepGenerator : IIncrementalGenerator
     }
 
     private static bool IsSyntaxTargetForGeneration(SyntaxNode node)
-     => (node is ClassDeclarationSyntax c && c.AttributeLists.Count > 0) ||
-        (node is EnumDeclarationSyntax e && e.AttributeLists.Count > 0);
+     => (node is ClassDeclarationSyntax c && c.AttributeLists.Count > 0); // || (node is EnumDeclarationSyntax e && e.AttributeLists.Count > 0);
 
 
     private void Execute(SourceProductionContext context, (Compilation Left, ImmutableArray<BaseTypeDeclarationSyntax> Right) tuple)
@@ -37,7 +36,7 @@ public partial class DeepGenerator : IIncrementalGenerator
         Context = context;
         Compilation = tuple.Left;
         Classes = [.. tuple.Right.Where(i => i is ClassDeclarationSyntax).Cast<ClassDeclarationSyntax>()];         // OfType<string>();
-        Enums = [.. tuple.Right.Where(i => i is EnumDeclarationSyntax).Cast<EnumDeclarationSyntax>()];
+        //Enums = [.. tuple.Right.Where(i => i is EnumDeclarationSyntax).Cast<EnumDeclarationSyntax>()];
         try
         {
             Execute();
@@ -56,39 +55,9 @@ public partial class DeepGenerator : IIncrementalGenerator
     //protected ImmutableArray<ClassDeclarationSyntax> Classes { get; private set; }
     protected ClassDeclarationSyntax[] Classes { get; private set; } = [];
 
-    protected EnumDeclarationSyntax[] Enums { get; private set; } = [];
-
-    #region Extention
-
-    //public IEnumerable<INamedTypeSymbol> GetAllClassesExt()
-    //{
-    //    foreach (var cla in Classes)
-    //    {
-    //        if (Compilation.GetSemanticModel(cla.SyntaxTree).GetDeclaredSymbol(cla) is INamedTypeSymbol symbol)
-    //        {
-    //            yield return symbol;
-    //        }
-    //    }
-    //}
-
-    // TODO
-    //public IEnumerable<INamedTypeSymbol> GetAllClassesWithAttributeExt(string attributeFullClassName) 
-    //    => GetAllClassesExt().Where(c => ((ISymbol)c).HasAttribute(attributeFullClassName));
-
-    #endregion
+    //protected EnumDeclarationSyntax[] Enums { get; private set; } = [];
 
     
-
-    //public string AssemblyName => Compilation.AssemblyName ?? "";
-
-    //public string GlobalNamespace => Compilation.AssemblyName ?? "";
-    
-    //=> Compilation.Assembly.ContainingNamespace.ToDisplayString();
-
-    //public IEnumerable<Class> GetAllClassesWithAttribute(string attributeFullName) => GetAllClasses().Where(c => c.HasAttribute(attributeFullName));
-
-    //public IEnumerable<Enum> GetAllEnumsWithAttribute(string attributeFullName) => GetAllEnums().Where(c => c.HasAttribute(attributeFullName));
-
     public void AddSource(string hintName, string source) => Context.AddSource(hintName, source);
 
     //public override IEnumerable<Attribute> Attributes => Compilation.Assembly.GetAttributes().Select(a => new Attribute(a));
