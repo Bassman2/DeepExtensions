@@ -81,6 +81,60 @@ partial class DeepExtensionsGenerator
                 }
             }
 
+            public class DeepComparer
+            {
+                public static bool CompareItems<T>(T[] list1, T[] list2) where T : IDeepEqual<T>
+                {
+                    if (list1 is null || list2 is null) return false;
+                    if (list1.Length != list2.Length) return false;
+                    for (int i = 0; i < list1.Length; i++)
+                    {
+                        var a = list1[i];
+                        var b = list2[i];
+                        if (a is null && b is null) continue;
+                        if (a is null || b is null) return false;
+
+                        if (!a.IsDeepEqual(b)) return false; 
+                    }
+                    return true;
+                }
+
+                public static bool CompareItems<T>(IList<T> list1, IList<T> list2) where T : IDeepEqual<T>
+                {
+                    if (list1 is null || list2 is null) return false;
+                    if (list1.Count != list2.Count) return false;
+                    for (int i = 0; i < list1.Count; i++)
+                    {
+                        var a = list1[i];
+                        var b = list2[i];
+                        if (a is null && b is null) continue;
+                        if (a is null || b is null) return false;
+            
+                        if (!a.IsDeepEqual(b)) return false; 
+                    }
+                    return true;
+                }
+
+                public static T[] CopyItems<T>(T[] array) where T : IDeepCopy<T>
+                {
+                    T[] copy = new T[array.Length];
+                    for (int i = 0; i < array.Length; i++)
+                    {
+                        copy[i] = array[i].DeepCopy(); 
+                    }
+                    return copy;
+                }
+
+                public static IList<T> CopyItems<T>(IList<T> list) where T : IDeepCopy<T>
+                {
+                    List<T> copy = new List<T>(list.Count);
+                    foreach (var item in list)
+                    {
+                        copy.Add(item.DeepCopy());
+                    }
+                    return copy;
+                }
+            }
             """);
     }
 

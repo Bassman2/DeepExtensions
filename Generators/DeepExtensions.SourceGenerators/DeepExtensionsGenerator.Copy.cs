@@ -30,7 +30,56 @@ partial class DeepExtensionsGenerator
             {
                 public {{cl.Name}} DeepCopy()
                 {
-                    return new {{cl.Name}}();
+                    return new {{cl.Name}}() {
+
+            """);
+
+        var properties = cl.GetMembers().OfType<IPropertySymbol>();
+        foreach (var prop in properties.Where(prop => !prop.GetAttributes().Any(a => a.AttributeClass?.Name == "DeepEqualIgnore")))
+        {
+            // array data type
+            if (prop.Type is IArrayTypeSymbol arrayType)
+            {
+                if (arrayType.ElementType is INamedTypeSymbol elementType && elementType.IsReferenceType && elementType.SpecialType != SpecialType.System_String)
+                {
+                    sb.AppendLine($"            {prop.Name} = DeepComparer.CopyItems(this.{prop.Name}),");
+                }
+                else
+                {
+                    sb.AppendLine($"            {prop.Name} = [.. this.{prop.Name}],");
+                }
+            }
+            else if (prop.Type is INamedTypeSymbol namedType)
+            {
+
+                var iListInterface = (prop.Type as INamedTypeSymbol)?.AllInterfaces
+                    .Prepend(prop.Type as INamedTypeSymbol)
+                    .FirstOrDefault(i => i?.IsGenericType == true && i.OriginalDefinition.ToDisplayString() == "System.Collections.Generic.IList<T>");
+
+                var elementType = prop.Type is IArrayTypeSymbol listType ? listType.ElementType : iListInterface?.TypeArguments.FirstOrDefault();
+
+                if (elementType is INamedTypeSymbol namedElem && namedElem.IsReferenceType && namedElem.SpecialType != SpecialType.System_String)
+                {
+                    sb.AppendLine($"            {prop.Name} = [.. DeepComparer.CopyItems(this.{prop.Name})],");
+                }
+                else if (elementType is not null)
+                {
+                    sb.AppendLine($"            {prop.Name} = [.. this.{prop.Name}],");
+                }
+                else if (namedType.IsReferenceType && namedType.SpecialType != SpecialType.System_String)
+                {
+                    sb.AppendLine($"            {prop.Name} = this.{prop.Name}.DeepCopy(),");
+                }
+                else
+                {
+                    sb.AppendLine($"            {prop.Name} = this.{prop.Name},");
+                }
+            }
+        }
+
+        sb.Append(
+            """
+                    };
                 }
             }
             """);
