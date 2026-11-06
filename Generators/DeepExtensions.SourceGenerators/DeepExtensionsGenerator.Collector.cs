@@ -47,6 +47,8 @@ partial class DeepExtensionsGenerator
         }
     }
 
+    //public void CollectClass(Dictionary<string, INamedTypeSymbol> col, INamedTypeSymbol findAttr, INamedTypeSymbol ignoreAttr)
+
     private void CollectBaseClasses(INamedTypeSymbol cl, Dictionary<string, INamedTypeSymbol> col, INamedTypeSymbol ignoreAttr)
     {
         var current = cl.BaseType;
@@ -57,6 +59,18 @@ partial class DeepExtensionsGenerator
         }
     }
 
+    private void CollectPropertyClasses(INamedTypeSymbol cl, Dictionary<string, INamedTypeSymbol> col, INamedTypeSymbol ignoreAttr)
+    {
+        foreach (var prop in cl.GetMembers().OfType<IPropertySymbol>())
+        {
+            if (prop.Type is INamedTypeSymbol propType)
+            {
+                TryAdd(col, propType);
+            }
+        }
+    }
+
+
     private void TryAdd(Dictionary<string, INamedTypeSymbol> col, INamedTypeSymbol cl)
     {
         if (IsPartial(cl))
@@ -65,15 +79,7 @@ partial class DeepExtensionsGenerator
         }
         else
         {
-            Context.ReportDiagnostic(Diagnostic.Create(new DiagnosticDescriptor(
-                "DEEPGEN001",
-                "Class is not partial",
-                "Class '{0}' is not partial. Please make it partial to generate deep extension methods.",
-                "DeepExtensionsGenerator",
-                DiagnosticSeverity.Error,
-                true),
-                Location.None,
-                cl.ToDisplayString()));
+            Context.ReportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.NoPartialModifieryError, Location.None, cl.ToDisplayString()));
         }
     }
 

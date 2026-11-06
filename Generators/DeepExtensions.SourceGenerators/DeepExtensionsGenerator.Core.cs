@@ -13,6 +13,11 @@ namespace DeepExtensions.SourceGenerators;
 [Generator(LanguageNames.CSharp)]
 public partial class DeepExtensionsGenerator : IIncrementalGenerator
 {
+
+    private ClassCollection? copyClassCollection;
+    private ClassCollection? equalClassCollection;
+    private ClassCollection? mapClassCollection;
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         context.RegisterPostInitializationOutput(postInitializationContext => CreateAttributes(postInitializationContext));
@@ -33,6 +38,11 @@ public partial class DeepExtensionsGenerator : IIncrementalGenerator
 
     private void Execute(SourceProductionContext context, (Compilation Left, ImmutableArray<BaseTypeDeclarationSyntax> Right) tuple)
     {
+
+        copyClassCollection = ClassCollection.Collect(context, tuple, DeepCopyAttributeName, DeepCopyIgnoreAttributeName);
+        equalClassCollection = ClassCollection.Collect(context, tuple, DeepEqualAttributeName, DeepEqualIgnoreAttributeName);
+        mapClassCollection = ClassCollection.Collect(context, tuple, DeepMapAttributeName, DeepMapIgnoreAttributeName);
+
         Context = context;
         Compilation = tuple.Left;
         Classes = [.. tuple.Right.Where(i => i is ClassDeclarationSyntax).Cast<ClassDeclarationSyntax>()];         // OfType<string>();
