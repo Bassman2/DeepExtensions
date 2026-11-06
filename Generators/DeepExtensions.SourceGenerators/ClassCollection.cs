@@ -83,16 +83,43 @@ public class ClassCollection
             DeepScan(current);
         }
 
+        // TODO: best prectise to make the recursive
+
         // loop over all properties without the ignoreAttr attribute
         var filteredProperties = cl.GetMembers().OfType<IPropertySymbol>()
             .Where(p => !p.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, ignoreAttr)));
         foreach (var prop in filteredProperties)
         {
-            // ...
+            // check if it is an array type
+            if (prop.Type is IArrayTypeSymbol arrayType && arrayType.ElementType is INamedTypeSymbol arrayElementType
+                && arrayElementType.TypeKind == TypeKind.Class
+                && arrayElementType.SpecialType != SpecialType.System_String
+                && !arrayElementType.IsGenericType)
+            {
+                DeepScan(arrayElementType);
+            }
+            // check if it is a generic list type
+            else if (prop.Type is INamedTypeSymbol genericType && genericType.IsGenericType)
+            {
+                var argsType = genericType.TypeArguments.OfType<INamedTypeSymbol>().Where(g =>
+                    g.TypeKind == TypeKind.Class &&
+                    g.SpecialType != SpecialType.System_String &&
+                    !g.IsGenericType);
+                foreach (var argType in argsType)
+                {
+                    DeepScan(argType);
+                }
+            }
+            // check if it is a class type and not a string or generic type
+            else if (prop.Type is INamedTypeSymbol classType
+                && classType.TypeKind == TypeKind.Class
+                && classType.SpecialType != SpecialType.System_String
+                && !classType.IsGenericType)
+            {
+                DeepScan(classType);
+            }
         }
-
     }
-
 
     private static bool IsPartial(INamedTypeSymbol symbol)
     {
