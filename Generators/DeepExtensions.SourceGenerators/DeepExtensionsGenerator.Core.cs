@@ -18,6 +18,7 @@ public partial class DeepExtensionsGenerator : IIncrementalGenerator
     private ClassCollection? equalClassCollection;
     private ClassCollection? mapClassCollection;
 
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         context.RegisterPostInitializationOutput(postInitializationContext => CreateAttributes(postInitializationContext));
@@ -36,9 +37,11 @@ public partial class DeepExtensionsGenerator : IIncrementalGenerator
      => (node is ClassDeclarationSyntax c && c.AttributeLists.Count > 0); // || (node is EnumDeclarationSyntax e && e.AttributeLists.Count > 0);
 
 
+    public static readonly SymbolDisplayFormat FormatWithoutNullable = SymbolDisplayFormat.CSharpErrorMessageFormat.WithMiscellaneousOptions(
+            SymbolDisplayFormat.CSharpErrorMessageFormat.MiscellaneousOptions & ~SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
+
     private void Execute(SourceProductionContext context, (Compilation Left, ImmutableArray<BaseTypeDeclarationSyntax> Right) tuple)
     {
-
         copyClassCollection = ClassCollection.Collect(context, tuple, DeepCopyAttributeName, DeepCopyIgnoreAttributeName);
         equalClassCollection = ClassCollection.Collect(context, tuple, DeepEqualAttributeName, DeepEqualIgnoreAttributeName);
         mapClassCollection = ClassCollection.Collect(context, tuple, DeepMapAttributeName, DeepMapIgnoreAttributeName);
@@ -49,6 +52,17 @@ public partial class DeepExtensionsGenerator : IIncrementalGenerator
         //Enums = [.. tuple.Right.Where(i => i is EnumDeclarationSyntax).Cast<EnumDeclarationSyntax>()];
         try
         {
+            string cont = string.Join(", ", copyClassCollection?.Classes.Select(c => c.ToDisplayString()) ?? []);
+            context.AddSource("Statistc.g.cs",
+                $$"""
+                /*
+                Copy:  {{copyClassCollection?.Classes.Count() ?? 0}} {{cont}}
+                Equal: {{equalClassCollection?.Classes.Count() ?? 0}}
+                Map:   {{mapClassCollection?.Classes.Count() ?? 0}}
+                */
+                """);
+
+            GenerateDeepCopy();
             Execute();
         }
         catch (Exception ex)

@@ -1,8 +1,4 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Collections.Immutable;
-
-namespace DeepExtensions.SourceGenerators;
+﻿namespace DeepExtensions.SourceGenerators;
 
 public class ClassCollection
 {
@@ -19,6 +15,13 @@ public class ClassCollection
 
     protected ClassDeclarationSyntax[] allClasses = [];
 
+    private readonly SymbolDisplayFormat formatWithoutNullable;
+    //=
+    //    SymbolDisplayFormat.Default.WithMiscellaneousOptions(
+    //        SymbolDisplayFormat.Default.MiscellaneousOptions
+    //        & ~SymbolDisplayFormatMiscellaneousOptions.IncludeNullableReferenceTypeModifier
+    //    );
+
     private ClassCollection(
         SourceProductionContext context,
         (Compilation Left, ImmutableArray<BaseTypeDeclarationSyntax> Right) tuple,
@@ -30,6 +33,9 @@ public class ClassCollection
         this.immutableArray = tuple.Right;
         this.findAttr = compilation.GetTypeByMetadataName(findAttr)!;
         this.ignoreAttr = compilation.GetTypeByMetadataName(ignoreAttr)!;
+
+        this.formatWithoutNullable = SymbolDisplayFormat.CSharpErrorMessageFormat.WithMiscellaneousOptions(
+            SymbolDisplayFormat.CSharpErrorMessageFormat.MiscellaneousOptions & ~SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
     }
 
     public static ClassCollection Collect(
@@ -72,10 +78,11 @@ public class ClassCollection
         }
 
         // already in the collection
-        if (items.ContainsKey(cl.ToDisplayString())) return;
+        //if (items.ContainsKey(cl.ToDisplayString())) return;
+        if (items.ContainsKey(cl.ToDisplayString(formatWithoutNullable))) return;
 
         // add to collection
-        items.Add(cl.ToDisplayString(), cl);
+        items.Add(cl.ToDisplayString(formatWithoutNullable), cl);
 
         // loop over all base classes
         for (var current = cl.BaseType; current != null && current.SpecialType != SpecialType.System_Object; current = current.BaseType)
