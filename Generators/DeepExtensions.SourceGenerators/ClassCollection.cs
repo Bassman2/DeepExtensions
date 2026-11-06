@@ -78,13 +78,17 @@ public class ClassCollection
         items.Add(cl.ToDisplayString(), cl);
 
         // loop over all base classes
-        //INamedTypeSymbol? current = cl.BaseType;
-        //while (current != null)
-        for (var current = cl.BaseType; current != null; current = current.BaseType)
+        for (var current = cl.BaseType; current != null && current.SpecialType != SpecialType.System_Object; current = current.BaseType)
         {
             DeepScan(current);
+        }
 
-            //current = current.BaseType;
+        // loop over all properties without the ignoreAttr attribute
+        var filteredProperties = cl.GetMembers().OfType<IPropertySymbol>()
+            .Where(p => !p.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, ignoreAttr)));
+        foreach (var prop in filteredProperties)
+        {
+            // ...
         }
 
     }
