@@ -15,12 +15,9 @@ public class ClassCollection
 
     protected ClassDeclarationSyntax[] allClasses = [];
 
-    private readonly SymbolDisplayFormat formatWithoutNullable;
-    //=
-    //    SymbolDisplayFormat.Default.WithMiscellaneousOptions(
-    //        SymbolDisplayFormat.Default.MiscellaneousOptions
-    //        & ~SymbolDisplayFormatMiscellaneousOptions.IncludeNullableReferenceTypeModifier
-    //    );
+    private readonly SymbolDisplayFormat formatWithoutNullable = SymbolDisplayFormat.CSharpErrorMessageFormat.WithMiscellaneousOptions(
+        SymbolDisplayFormat.CSharpErrorMessageFormat.MiscellaneousOptions & ~SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
+    
 
     private ClassCollection(
         SourceProductionContext context,
@@ -33,9 +30,6 @@ public class ClassCollection
         this.immutableArray = tuple.Right;
         this.findAttr = compilation.GetTypeByMetadataName(findAttr)!;
         this.ignoreAttr = compilation.GetTypeByMetadataName(ignoreAttr)!;
-
-        this.formatWithoutNullable = SymbolDisplayFormat.CSharpErrorMessageFormat.WithMiscellaneousOptions(
-            SymbolDisplayFormat.CSharpErrorMessageFormat.MiscellaneousOptions & ~SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
     }
 
     public static ClassCollection Collect(

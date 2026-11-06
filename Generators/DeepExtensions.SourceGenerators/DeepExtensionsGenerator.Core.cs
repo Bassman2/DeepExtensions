@@ -52,18 +52,18 @@ public partial class DeepExtensionsGenerator : IIncrementalGenerator
         //Enums = [.. tuple.Right.Where(i => i is EnumDeclarationSyntax).Cast<EnumDeclarationSyntax>()];
         try
         {
-            string cont = string.Join(", ", copyClassCollection?.Classes.Select(c => c.ToDisplayString()) ?? []);
             context.AddSource("Statistc.g.cs",
                 $$"""
                 /*
-                Copy:  {{copyClassCollection?.Classes.Count() ?? 0}} {{cont}}
-                Equal: {{equalClassCollection?.Classes.Count() ?? 0}}
-                Map:   {{mapClassCollection?.Classes.Count() ?? 0}}
+                Copy:  {{copyClassCollection?.Classes.Count() ?? 0}} {{string.Join(", ", copyClassCollection?.Classes.Select(c => c.ToDisplayString()) ?? [])}}
+                Equal: {{equalClassCollection?.Classes.Count() ?? 0}} {{string.Join(", ", equalClassCollection?.Classes.Select(c => c.ToDisplayString()) ?? [])}}
+                Map:   {{mapClassCollection?.Classes.Count() ?? 0}} {{string.Join(", ", mapClassCollection?.Classes.Select(c => c.ToDisplayString()) ?? [])}}
                 */
                 """);
 
             GenerateDeepCopy();
-            Execute();
+            GenerateDeepEqual();
+            //GenerateDeepMap();
         }
         catch (Exception ex)
         {

@@ -1,6 +1,4 @@
-﻿using static System.Net.Mime.MediaTypeNames;
-
-namespace DeepExtensions.SourceGenerators;
+﻿namespace DeepExtensions.SourceGenerators;
 
 partial class DeepExtensionsGenerator
 {
