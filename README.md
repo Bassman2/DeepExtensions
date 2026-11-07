@@ -18,6 +18,16 @@ The Deep Extentions are a collection of three Deep features based on Source Gene
 
 Generates code for deep copy.
 
+## Attributes
+
+### [DeepCopy]
+
+The [DeepCopy] attribute only needs to be placed on the root element; it signals that a deep copy should be generated recursively for this class, all its base classes, and all its propertiy classes.
+
+### [DeepCopyIgnore]
+
+All properties with [DeepCopyIgnore] will be ignored.
+
 ## Example
 
 ```
@@ -52,6 +62,14 @@ partial class DemoModel : IDeepCopy<DemoModel>
 # DeepEqual
 
 Generates code for deep equal.
+
+### [DeepEqual]
+
+The [DeepEqual] attribute only needs to be placed on the root element; it signals that a deep equal should be generated recursively for this class, all its base classes, and all its propertiy classes.
+
+### [DeepEqualIgnore]
+
+All properties with [DeepEqualIgnore] will be ignored.
 
 ## Example
 
