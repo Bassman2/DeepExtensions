@@ -51,52 +51,18 @@ partial class DeepExtensionsGenerator
         var properties = cl.GetMembers().OfType<IPropertySymbol>();
         foreach (var prop in properties.Where(prop => !prop.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, DeepCopyIgnoreAttribute))))
         {
-            // array data type
-            if (prop.Type is IArrayTypeSymbol arrayType)
+            TypeClass propType = ClassifyType(prop.Type);
+            sb.AppendLine(propType switch
             {
-                if (arrayType.ElementType is INamedTypeSymbol elementType && elementType.IsReferenceType && elementType.SpecialType != SpecialType.System_String)
-                {
-                    sb.AppendLine($"        target.{prop.Name} = DeepComparer.CopyItems(this.{prop.Name});");
-                }
-                else
-                {
-                    sb.AppendLine($"        target.{prop.Name} = [.. this.{prop.Name}];");
-                }
-            }
-            else if (prop.Type is INamedTypeSymbol namedType)
-            {
-
-                var iListInterface = (prop.Type as INamedTypeSymbol)?.AllInterfaces
-                    .Prepend(prop.Type as INamedTypeSymbol)
-                    .FirstOrDefault(i => i?.IsGenericType == true && i.OriginalDefinition.ToDisplayString() == "System.Collections.Generic.IList<T>");
-
-                var elementType = prop.Type is IArrayTypeSymbol listType ? listType.ElementType : iListInterface?.TypeArguments.FirstOrDefault();
-
-                if (elementType is INamedTypeSymbol namedElem && namedElem.IsReferenceType && namedElem.SpecialType != SpecialType.System_String)
-                {
-                    sb.AppendLine($"        target.{prop.Name} = [.. DeepComparer.CopyItems(this.{prop.Name})];");
-                }
-                else if (elementType is not null)
-                {
-                    sb.AppendLine($"        target.{prop.Name} = [.. this.{prop.Name}];");
-                }
-                else if (namedType.IsReferenceType && namedType.SpecialType != SpecialType.System_String)
-                {
-                    // is nullable reference type
-                    if (namedType.NullableAnnotation == NullableAnnotation.Annotated)
-                    {
-                        sb.AppendLine($"        target.{prop.Name} = this.{prop.Name}?.DeepCopy();");
-                    }
-                    else
-                    {
-                        sb.AppendLine($"        target.{prop.Name} = this.{prop.Name}.DeepCopy();");
-                    }
-                }
-                else
-                {
-                    sb.AppendLine($"        target.{prop.Name} = this.{prop.Name};");
-                }
-            }
+                TypeClass.ReferenceArray =>     $"        target.{prop.Name} = DeepComparer.CopyItems(this.{prop.Name});",
+                TypeClass.ValueArray =>         $"        target.{prop.Name} = [.. this.{prop.Name}];",
+                TypeClass.ReferenceList =>      $"        target.{prop.Name} = [.. DeepComparer.CopyItems(this.{prop.Name})];",
+                TypeClass.ValueList =>          $"        target.{prop.Name} = [.. this.{prop.Name}];",
+                TypeClass.Reference =>          $"        target.{prop.Name} = this.{prop.Name}.DeepCopy();",
+                TypeClass.NullableReference =>  $"        target.{prop.Name} = this.{prop.Name}?.DeepCopy();",
+                TypeClass.Value =>              $"        target.{prop.Name} = this.{prop.Name};",
+                _ =>                            $"        // Unknown type for property {prop.Name}, manual handling may be required."
+            });
         }
 
         sb.Append(
