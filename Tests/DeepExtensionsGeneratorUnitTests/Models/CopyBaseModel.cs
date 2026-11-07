@@ -1,22 +1,21 @@
 ﻿namespace DeepExtensionsGeneratorUnitTests.Models;
 
-[DeepCopy]
 public partial class CopyBaseModel
 {
-    public string Name { get; set; } = "";
-    public double Value { get; set; }
+    public string BaseName { get; set; } = "";
+    public double BaseValue { get; set; }
 
-    public CopyLeafModel Leaf { get; set; } = new CopyLeafModel();
+    public CopyLeafModel BaseLeaf { get; set; } = new CopyLeafModel();
 
-    public CopyLeafModel? LeafNull { get; set; } = null;
+    public CopyLeafModel? BaseLeafNull { get; set; } = null;
 
-    public List<CopyLeafModel> LeaveList { get; set; } = [];
+    public List<CopyLeafModel> BaseLeaveList { get; set; } = [];
 
-    public CopyLeafModel[] LeaveArray { get; set; } = [];
-
-    [DeepCopyIgnore]
-    public string NameX { get; set; } = ""; 
+    public CopyLeafModel[] BaseLeaveArray { get; set; } = [];
 
     [DeepCopyIgnore]
-    public double ValueX { get; set; }
+    public string BaseNameX { get; set; } = ""; 
+
+    [DeepCopyIgnore]
+    public double BaseValueX { get; set; }
 }

@@ -12,7 +12,7 @@ public sealed class DeepCopyTests
     [TestMethod]
     public void DeepCopyTest()
     {
-        var model = new CopyBaseModel { 
+        var model = new CopyRootModel { 
             Name = "Peter",
             Value = 10.5,
             Leaf = new CopyLeafModel { Name = "Leaf", Value = 5.5 },
