@@ -2,6 +2,7 @@
 
 partial class DeepExtensionsGenerator
 {
+    
     private void GenerateDeepCopy()
     {
         foreach (var cl in copyClassCollection?.Classes ?? [])
@@ -13,6 +14,7 @@ partial class DeepExtensionsGenerator
     private void CreateDeepCopyClassFile(INamedTypeSymbol cl)
     {
         string classNamespace = cl.ContainingNamespace?.ToDisplayString(FormatWithoutNullable) ?? string.Empty;
+        bool hasBaseClass = cl.BaseType != null && cl.BaseType.SpecialType != SpecialType.System_Object;
 
         StringBuilder sb = new(
             $$"""
@@ -28,25 +30,36 @@ partial class DeepExtensionsGenerator
 
             partial class {{cl.Name}} : IDeepCopy<{{cl.Name}}>
             {
-                public {{cl.Name}} DeepCopy()
+                public {{(hasBaseClass ? "override" : "virtual")}} {{cl.Name}} DeepCopy()
                 {
-                    return new {{cl.Name}}() {
+                    var copy = new {{cl.Name}}();
+                    DeepCopyTo(copy);
+                    return copy;
+                }
+
+                protected void DeepCopyTo({{cl.Name}} target)
+                {
 
             """);
 
+        if (hasBaseClass)
+        {
+            sb.AppendLine("            base.DeepCopyTo(target);");
+        }
+
         var properties = cl.GetMembers().OfType<IPropertySymbol>();
-        foreach (var prop in properties.Where(prop => !prop.GetAttributes().Any(a => a.AttributeClass?.Name == "DeepEqualIgnore")))
+        foreach (var prop in properties.Where(prop => !prop.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, DeepCopyIgnoreAttribute))))
         {
             // array data type
             if (prop.Type is IArrayTypeSymbol arrayType)
             {
                 if (arrayType.ElementType is INamedTypeSymbol elementType && elementType.IsReferenceType && elementType.SpecialType != SpecialType.System_String)
                 {
-                    sb.AppendLine($"            {prop.Name} = DeepComparer.CopyItems(this.{prop.Name}),");
+                    sb.AppendLine($"        target.{prop.Name} = DeepComparer.CopyItems(this.{prop.Name});");
                 }
                 else
                 {
-                    sb.AppendLine($"            {prop.Name} = [.. this.{prop.Name}],");
+                    sb.AppendLine($"        target.{prop.Name} = [.. this.{prop.Name}];");
                 }
             }
             else if (prop.Type is INamedTypeSymbol namedType)
@@ -60,26 +73,25 @@ partial class DeepExtensionsGenerator
 
                 if (elementType is INamedTypeSymbol namedElem && namedElem.IsReferenceType && namedElem.SpecialType != SpecialType.System_String)
                 {
-                    sb.AppendLine($"            {prop.Name} = [.. DeepComparer.CopyItems(this.{prop.Name})],");
+                    sb.AppendLine($"        target.{prop.Name} = [.. DeepComparer.CopyItems(this.{prop.Name})];");
                 }
                 else if (elementType is not null)
                 {
-                    sb.AppendLine($"            {prop.Name} = [.. this.{prop.Name}],");
+                    sb.AppendLine($"        target.{prop.Name} = [.. this.{prop.Name}];");
                 }
                 else if (namedType.IsReferenceType && namedType.SpecialType != SpecialType.System_String)
                 {
-                    sb.AppendLine($"            {prop.Name} = this.{prop.Name}.DeepCopy(),");
+                    sb.AppendLine($"        target.{prop.Name} = this.{prop.Name}.DeepCopy();");
                 }
                 else
                 {
-                    sb.AppendLine($"            {prop.Name} = this.{prop.Name},");
+                    sb.AppendLine($"        target.{prop.Name} = this.{prop.Name};");
                 }
             }
         }
 
         sb.Append(
             """
-                    };
                 }
             }
             """);

@@ -37,7 +37,7 @@ partial class DeepExtensionsGenerator
 
         var properties = cl.GetMembers().OfType<IPropertySymbol>();
 
-        foreach (var prop in properties.Where(prop => !prop.GetAttributes().Any(a => a.AttributeClass?.Name == "DeepEqualIgnore")))
+        foreach (var prop in properties.Where(prop => !prop.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, DeepEqualIgnoreAttribute))))
         {
             // array data type
             if (prop.Type is IArrayTypeSymbol arrayType)

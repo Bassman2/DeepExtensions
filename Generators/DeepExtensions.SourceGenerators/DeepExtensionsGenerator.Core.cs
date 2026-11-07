@@ -42,6 +42,9 @@ public partial class DeepExtensionsGenerator : IIncrementalGenerator
 
     private void Execute(SourceProductionContext context, (Compilation Left, ImmutableArray<BaseTypeDeclarationSyntax> Right) tuple)
     {
+        DeepCopyIgnoreAttribute = tuple.Left.GetTypeByMetadataName(DeepCopyIgnoreAttributeName)!;
+        DeepEqualIgnoreAttribute = tuple.Left.GetTypeByMetadataName(DeepEqualIgnoreAttributeName)!;
+
         copyClassCollection = ClassCollection.Collect(context, tuple, DeepCopyAttributeName, DeepCopyIgnoreAttributeName);
         equalClassCollection = ClassCollection.Collect(context, tuple, DeepEqualAttributeName, DeepEqualIgnoreAttributeName);
         mapClassCollection = ClassCollection.Collect(context, tuple, DeepMapAttributeName, DeepMapIgnoreAttributeName);

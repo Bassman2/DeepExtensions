@@ -5,8 +5,12 @@ partial class DeepExtensionsGenerator
     private const string DeepCopyAttributeName = "DeepExtensions.DeepCopyAttribute";
     private const string DeepCopyIgnoreAttributeName = "DeepExtensions.DeepCopyIgnoreAttribute";
 
+    private INamedTypeSymbol DeepCopyIgnoreAttribute = null!;
+
     private const string DeepEqualAttributeName = "DeepExtensions.DeepEqualAttribute";
     private const string DeepEqualIgnoreAttributeName = "DeepExtensions.DeepEqualIgnoreAttribute";
+
+    private INamedTypeSymbol DeepEqualIgnoreAttribute = null!;
 
     private const string DeepMapAttributeName = "DeepExtensions.DeepMapAttribute";
     private const string DeepMapIgnoreAttributeName = "DeepExtensions.DeepMapIgnoreAttribute";
