@@ -14,7 +14,8 @@ partial class DeepExtensionsGenerator
     private void CreateDeepCopyClassFile(INamedTypeSymbol cl)
     {
         string classNamespace = cl.ContainingNamespace?.ToDisplayString(FormatWithoutNullable) ?? string.Empty;
-        bool hasBaseClass = cl.BaseType != null && cl.BaseType.SpecialType != SpecialType.System_Object;
+        bool hasLocalBaseClass = cl.BaseType != null && cl.BaseType.SpecialType != SpecialType.System_Object 
+            && cl.BaseType.DeclaringSyntaxReferences.Length > 0; // check if in current assembly
 
         StringBuilder sb = new(
             $$"""
@@ -30,7 +31,7 @@ partial class DeepExtensionsGenerator
 
             partial class {{cl.Name}} : IDeepCopy<{{cl.Name}}>
             {
-                public {{(hasBaseClass ? "override" : "virtual")}} {{cl.Name}} DeepCopy()
+                public {{(hasLocalBaseClass ? "override" : "virtual")}} {{cl.Name}} DeepCopy()
                 {
                     var copy = new {{cl.Name}}();
                     DeepCopyTo(copy);
@@ -42,9 +43,9 @@ partial class DeepExtensionsGenerator
 
             """);
 
-        if (hasBaseClass)
+        if (hasLocalBaseClass)
         {
-            sb.AppendLine("            base.DeepCopyTo(target);");
+            sb.AppendLine("        base.DeepCopyTo(target);");
         }
 
         var properties = cl.GetMembers().OfType<IPropertySymbol>();
@@ -81,7 +82,15 @@ partial class DeepExtensionsGenerator
                 }
                 else if (namedType.IsReferenceType && namedType.SpecialType != SpecialType.System_String)
                 {
-                    sb.AppendLine($"        target.{prop.Name} = this.{prop.Name}.DeepCopy();");
+                    // is nullable reference type
+                    if (namedType.NullableAnnotation == NullableAnnotation.Annotated)
+                    {
+                        sb.AppendLine($"        target.{prop.Name} = this.{prop.Name}?.DeepCopy();");
+                    }
+                    else
+                    {
+                        sb.AppendLine($"        target.{prop.Name} = this.{prop.Name}.DeepCopy();");
+                    }
                 }
                 else
                 {
