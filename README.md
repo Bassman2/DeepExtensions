@@ -18,6 +18,14 @@ The Deep Extentions are a collection of three Deep features based on Source Gene
 
 Generates code for deep copy.
 
+## Attributes
+
+### [DeepCopy]
+
+The [DeepCopy] attribute only needs to be placed on the root element; it signals that a deep copy should be generated recursively for this class, all its base classes, and all its properties.
+
+### [DeepCopyIgnore]
+
 ## Example
 
 ```
