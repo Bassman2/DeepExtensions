@@ -62,7 +62,7 @@ partial class DeepExtensionsGenerator
                 TypeClass.Reference =>          $"target.{prop.Name} = this.{prop.Name}.DeepCopy();",
                 TypeClass.NullableReference =>  $"target.{prop.Name} = this.{prop.Name}?.DeepCopy();",
                 TypeClass.Value =>              $"target.{prop.Name} = this.{prop.Name};",
-                _ =>                            $"// Unknown type for property {prop.Name}, manual handling may be required."
+                _ =>                            $"#warning Unknown type for property {prop.Name}, manual handling may be required."
             });
         }
 

@@ -52,7 +52,7 @@ partial class DeepExtensionsGenerator
                 TypeClass.Reference =>          $"{prop.Name}.IsDeepEqual(other.{prop.Name}) &&",
                 TypeClass.NullableReference =>  $"{prop.Name}.IsDeepEqual(other.{prop.Name}) &&",
                 TypeClass.Value =>              $"{prop.Name} == other.{prop.Name} &&",
-                _ =>                            $"// Unknown type for property {prop.Name}, manual handling may be required."
+                _ =>                            $"#warning Unknown type for property {prop.Name}, manual handling may be required."
             });
         }
 
