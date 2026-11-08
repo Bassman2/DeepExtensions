@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>DeepExtensions</id>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
     <title>DeepExtensions</title>
     <authors>Ralf Beckers</authors>
     <owners>Ralf Beckers</owners>
@@ -14,7 +14,7 @@
     <releaseNotes>Creation</releaseNotes>
     <copyright>Copyright 2026 (c) by Ralf Beckers</copyright>
     <repository type="git" url="https://github.com/Bassman2/DeepExtensions" />
-    <tags>DeepCopy DeepEqual DeepMap</tags>
+    <tags>DeepCopy DeepEqual DeepMap AOT Trimmable Gererator MVVM</tags>
     <readme>docs\README.md</readme>
 	<dependencies/>
   </metadata>
