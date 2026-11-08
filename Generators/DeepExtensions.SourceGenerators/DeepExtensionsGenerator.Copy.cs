@@ -52,16 +52,17 @@ partial class DeepExtensionsGenerator
         foreach (var prop in properties.Where(prop => !prop.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, DeepCopyIgnoreAttribute))))
         {
             TypeClass propType = ClassifyType(prop.Type);
+            sb.Append("        ");
             sb.AppendLine(propType switch
             {
-                TypeClass.ReferenceArray =>     $"        target.{prop.Name} = DeepComparer.CopyItems(this.{prop.Name});",
-                TypeClass.ValueArray =>         $"        target.{prop.Name} = [.. this.{prop.Name}];",
-                TypeClass.ReferenceList =>      $"        target.{prop.Name} = [.. DeepComparer.CopyItems(this.{prop.Name})];",
-                TypeClass.ValueList =>          $"        target.{prop.Name} = [.. this.{prop.Name}];",
-                TypeClass.Reference =>          $"        target.{prop.Name} = this.{prop.Name}.DeepCopy();",
-                TypeClass.NullableReference =>  $"        target.{prop.Name} = this.{prop.Name}?.DeepCopy();",
-                TypeClass.Value =>              $"        target.{prop.Name} = this.{prop.Name};",
-                _ =>                            $"        // Unknown type for property {prop.Name}, manual handling may be required."
+                TypeClass.ReferenceArray =>     $"target.{prop.Name} = DeepComparer.CopyItems(this.{prop.Name});",
+                TypeClass.ValueArray =>         $"target.{prop.Name} = [.. this.{prop.Name}];",
+                TypeClass.ReferenceList =>      $"target.{prop.Name} = [.. DeepComparer.CopyItems(this.{prop.Name})];",
+                TypeClass.ValueList =>          $"target.{prop.Name} = [.. this.{prop.Name}];",
+                TypeClass.Reference =>          $"target.{prop.Name} = this.{prop.Name}.DeepCopy();",
+                TypeClass.NullableReference =>  $"target.{prop.Name} = this.{prop.Name}?.DeepCopy();",
+                TypeClass.Value =>              $"target.{prop.Name} = this.{prop.Name};",
+                _ =>                            $"// Unknown type for property {prop.Name}, manual handling may be required."
             });
         }
 

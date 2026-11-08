@@ -13,6 +13,9 @@ partial class DeepExtensionsGenerator
     private void CreateDeepEqualClassFile(INamedTypeSymbol cl)
     {
         string classNamespace = cl.ContainingNamespace?.ToDisplayString(FormatWithoutNullable) ?? string.Empty;
+        bool hasLocalBaseClass = cl.BaseType != null && cl.BaseType.SpecialType != SpecialType.System_Object
+            && cl.BaseType.DeclaringSyntaxReferences.Length > 0; // check if in current assembly
+
 
         StringBuilder sb = new(
             $$"""
@@ -36,49 +39,23 @@ partial class DeepExtensionsGenerator
             """);
 
         var properties = cl.GetMembers().OfType<IPropertySymbol>();
-
         foreach (var prop in properties.Where(prop => !prop.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, DeepEqualIgnoreAttribute))))
         {
-            // array data type
-            if (prop.Type is IArrayTypeSymbol arrayType)
+            TypeClass propType = ClassifyType(prop.Type);
+            sb.Append("            ");  
+            sb.AppendLine(propType switch
             {
-                if (arrayType.ElementType is INamedTypeSymbol elementType && elementType.IsReferenceType && elementType.SpecialType != SpecialType.System_String)
-                {
-                    sb.AppendLine($"            DeepComparer.CompareItems({prop.Name}, other.{prop.Name}) &&");
-                }
-                else
-                {
-                    sb.AppendLine($"            {prop.Name}.SequenceEqual(other.{prop.Name}) &&");
-                }
-            }
-            else if (prop.Type is INamedTypeSymbol namedType)
-            {
-
-                var iListInterface = (prop.Type as INamedTypeSymbol)?.AllInterfaces
-                    .Prepend(prop.Type as INamedTypeSymbol)
-                    .FirstOrDefault(i => i?.IsGenericType == true && i.OriginalDefinition.ToDisplayString() == "System.Collections.Generic.IList<T>");
-
-                var elementType = prop.Type is IArrayTypeSymbol listType ? listType.ElementType : iListInterface?.TypeArguments.FirstOrDefault();
-
-                if (elementType is INamedTypeSymbol namedElem && namedElem.IsReferenceType && namedElem.SpecialType != SpecialType.System_String)
-                {
-                    sb.AppendLine($"            DeepComparer.CompareItems({prop.Name}, other.{prop.Name}) &&");
-                }
-                else if (elementType is not null) 
-                {
-                    sb.AppendLine($"            {prop.Name}.SequenceEqual(other.{prop.Name}) &&");
-                }
-                else if (namedType.IsReferenceType && namedType.SpecialType != SpecialType.System_String)
-                {
-                    sb.AppendLine($"            {prop.Name}.IsDeepEqual(other.{prop.Name}) &&");
-                }
-                else
-                {
-                    sb.AppendLine($"            {prop.Name} == other.{prop.Name} &&");
-                }
-            }
+                TypeClass.ReferenceArray =>     $"DeepComparer.CompareItems({prop.Name}, other.{prop.Name}) &&",
+                TypeClass.ValueArray =>         $"{prop.Name}.SequenceEqual(other.{prop.Name}) &&",
+                TypeClass.ReferenceList =>      $"DeepComparer.CompareItems({prop.Name}, other.{prop.Name}) &&",
+                TypeClass.ValueList =>          $"{prop.Name}.SequenceEqual(other.{prop.Name}) &&",
+                TypeClass.Reference =>          $"{prop.Name}.IsDeepEqual(other.{prop.Name}) &&",
+                TypeClass.NullableReference =>  $"{prop.Name}.IsDeepEqual(other.{prop.Name}) &&",
+                TypeClass.Value =>              $"{prop.Name} == other.{prop.Name} &&",
+                _ =>                            $"// Unknown type for property {prop.Name}, manual handling may be required."
+            });
         }
-    
+
         sb.Append(
             """
                         true;
