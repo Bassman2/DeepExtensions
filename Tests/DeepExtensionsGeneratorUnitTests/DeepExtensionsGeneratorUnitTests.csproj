@@ -29,4 +29,8 @@
     <ProjectReference Include="..\..\Generators\DeepExtensions.SourceGenerators\DeepExtensions.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Models\Map\" />
+  </ItemGroup>
+
 </Project>

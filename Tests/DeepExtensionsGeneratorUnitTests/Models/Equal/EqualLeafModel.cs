@@ -5,9 +5,9 @@ public partial class EqualLeafModel
     public string Name { get; set; } = "";
     public double Value { get; set; }
 
-    [DeepEqualIgnore]
+    [DeepEqualIgnore, DeepCopyIgnore]
     public string NameX { get; set; } = "";
 
-    [DeepEqualIgnore]
+    [DeepEqualIgnore, DeepCopyIgnore]
     public double ValueX { get; set; }
 }

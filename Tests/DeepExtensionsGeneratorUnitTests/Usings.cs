@@ -8,6 +8,8 @@ global using CommunityToolkit.Mvvm.Input;
 
 global using DeepExtensions;
 
+global using DeepExtensionsGeneratorUnitTests.Models;
+
 
 
 

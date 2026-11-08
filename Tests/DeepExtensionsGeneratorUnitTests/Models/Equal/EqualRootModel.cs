@@ -1,7 +1,7 @@
 ﻿namespace DeepExtensionsGeneratorUnitTests.Models;
 
-[DeepEqual]
-public partial class EqualBaseModel
+[DeepEqual, DeepCopy]
+public partial class EqualRootModel : EqualBaseModel
 {
     public string Name { get; set; } = "";
     public double Value { get; set; }
@@ -14,9 +14,9 @@ public partial class EqualBaseModel
 
     public EqualLeafModel[] LeaveArray { get; set; } = [];
 
-    [DeepEqualIgnore]
+    [DeepEqualIgnore, DeepCopyIgnore]
     public string NameX { get; set; } = "";
 
-    [DeepEqualIgnore]
+    [DeepEqualIgnore, DeepCopyIgnore]
     public double ValueX { get; set; }
 }

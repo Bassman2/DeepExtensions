@@ -38,6 +38,11 @@ partial class DeepExtensionsGenerator
 
             """);
 
+        if (hasLocalBaseClass)
+        {
+            sb.AppendLine($"            base.IsDeepEqual(other) &&");
+        }
+
         var properties = cl.GetMembers().OfType<IPropertySymbol>();
         foreach (var prop in properties.Where(prop => !prop.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, DeepEqualIgnoreAttribute))))
         {
@@ -50,7 +55,7 @@ partial class DeepExtensionsGenerator
                 TypeClass.ReferenceList =>      $"DeepComparer.CompareItems({prop.Name}, other.{prop.Name}) &&",
                 TypeClass.ValueList =>          $"{prop.Name}.SequenceEqual(other.{prop.Name}) &&",
                 TypeClass.Reference =>          $"{prop.Name}.IsDeepEqual(other.{prop.Name}) &&",
-                TypeClass.NullableReference =>  $"{prop.Name}.IsDeepEqual(other.{prop.Name}) &&",
+                TypeClass.NullableReference =>  $"({prop.Name} is null ? other.{prop.Name} is null : {prop.Name}.IsDeepEqual(other.{prop.Name})) &&",                                                
                 TypeClass.Value =>              $"{prop.Name} == other.{prop.Name} &&",
                 _ =>                            $"#warning Unknown type for property {prop.Name}, manual handling may be required."
             });

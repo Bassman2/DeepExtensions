@@ -1,10 +1,4 @@
-﻿//#pragma warning disable IDE0017 
-
-
-
-using DeepExtensionsGeneratorUnitTests.Models;
-
-namespace DeepExtensionsGeneratorUnitTests;
+﻿namespace DeepExtensionsGeneratorUnitTests;
 
 [TestClass]
 public sealed class DeepCopyTests
