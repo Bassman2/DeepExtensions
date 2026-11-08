@@ -4,6 +4,7 @@ partial class DeepExtensionsGenerator
 {
     private enum TypeClass
     {
+        Unknown,
         ReferenceArray,
         ValueArray,
         ReferenceList,
@@ -11,11 +12,28 @@ partial class DeepExtensionsGenerator
         Reference,
         NullableReference,
         Value,
-        Unknown
+
+        // for map only
+        ConverterFunc, 
+        ConverterClass
     }
 
-    private TypeClass ClassifyType(ITypeSymbol typeSymbol)
+    private TypeClass ClassifyPropertyType(IPropertySymbol prop, bool isMap = false)
     {
+        ITypeSymbol typeSymbol = prop.Type;
+        // Handle map-specific type classification
+        //if (isMap)
+        //{
+        //    if (HasNamedArgument(propAttr, "Converter"))
+        //    {
+        //        return DataType.ConverterFunc;
+        //    }
+        //    else if (HasNamedArgument(propAttr, "ConverterType"))
+        //    {
+        //        return DataType.ConverterClass;
+        //    }
+        //}
+
         // array data type
         if (typeSymbol is IArrayTypeSymbol arrayType)
         {

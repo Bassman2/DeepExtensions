@@ -41,7 +41,7 @@ partial class DeepExtensionsGenerator
         var properties = cl.GetMembers().OfType<IPropertySymbol>();
         foreach (var prop in properties.Where(prop => !prop.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, DeepEqualIgnoreAttribute))))
         {
-            TypeClass propType = ClassifyType(prop.Type);
+            TypeClass propType = ClassifyPropertyType(prop);
             sb.Append("            ");  
             sb.AppendLine(propType switch
             {

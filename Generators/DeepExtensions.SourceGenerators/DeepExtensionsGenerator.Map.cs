@@ -8,123 +8,27 @@ partial class DeepExtensionsGenerator
     private INamedTypeSymbol? ObservableModelObjectAttribute;
     private INamedTypeSymbol? ObservableModelPropertyAttribute;
 
-    public void Execute()
-    {
+    private string debugString = string.Empty;
 
+    private void GenerateDeepMap()
+    {
         ObservableModelObjectAttribute = Compilation.GetTypeByMetadataName(ObservableModelObjectAttributeName);
         ObservableModelPropertyAttribute = Compilation.GetTypeByMetadataName(ObservableModelPropertyAttributeName);
 
-        //Location errorLocation = propertySyntax.GetLocation();
-        //string propertyName = propertySyntax.Identifier.Text;
-
-        //Diagnostic diagnostic = Diagnostic.Create(GeneratorDiagnostics.InvalidPropertyError, errorLocation, propertyName);  // Befüllt das '{0}' im messageFormat
-        //Context.ReportDiagnostic(diagnostic);
-
-        //ReportError("Test");
-
-        //Debugger.Launch();
-
-        CreateDebug();
-
-        // get all classes with [ObservableModelObjectAttribute] 
-        foreach (var cl in GetAllClassesWithAttribute(ObservableModelObjectAttribute!))
+        foreach (var cl in mapClassCollection?.Classes ?? [])
         {
-            CreateClassFile(cl);
-        }
-    }
-    
-    private string debugString = string.Empty;
-
-    public enum DataType { Error, Simple, Model, List, ModelList, ConverterFunc, ConverterClass }
-
-    public DataType GetDataType(IPropertySymbol prop, AttributeData propAttr)
-    {
-        if (HasNamedArgument(propAttr,"Converter"))
-        {
-            return DataType.ConverterFunc;
-        }
-        else if (HasNamedArgument(propAttr, "ConverterType"))
-        {
-            return DataType.ConverterClass;
-        }
-        else if (IsObservableCollection(prop.Type))
-        {
-            var innerType = GetInnerType(prop.Type)!;
-            if (ImplementsInterface(innerType, "System.ComponentModel.INotifyPropertyChanged"))
-            {
-                // type is a ViewModel type, because it implements INotifyPropertyChanged
-                return DataType.ModelList;
-            }
-            else
-            {
-                return DataType.List;
-            }
-        }
-        else
-        {
-            if (ImplementsInterface(prop.Type, "System.ComponentModel.INotifyPropertyChanged"))
-            {
-                return DataType.Model;
-            }
-            else
-            {
-                return DataType.Simple;
-            }
+            CreateDeepMapClassFile(cl);
         }
     }
 
-    public struct PropertyData
-    {
-        public DataType DataType { get; set; }
-        public string ViewModelPropertyName { get; set; }
-        public string ViewModelPropertyType { get; set; }
-        public string ModelPropertyName { get; set; }
-        public string ModelPropertyType { get; set; }
-        public string? Converter { get; set; }
-    }
-
-    private PropertyData FindData(IPropertySymbol prop, AttributeData propAttr, INamedTypeSymbol? modelSymbol)
-    {
-        DataType dataType = GetDataType(prop, propAttr);
-        string viewModelPropertyName = prop.Name;
-        string viewModelPropertyType = IsObservableCollection(prop.Type) ? GetInnerType(prop.Type)!.ToDisplayString() : prop.Type.ToDisplayString(); 
-
-        string modelPropertyName = propAttr.ConstructorArguments.FirstOrDefault().Value?.ToString() ?? prop.Name;
-        //string modelPropertyType = modelSymbol?.GetMembers(modelPropertyName).OfType<IPropertySymbol>().FirstOrDefault()?.Type.ToDisplayString()!;
-        string modelPropertyType = GetPropertyTypeRecursive(modelSymbol!, modelPropertyName);
-            
-        string test = modelSymbol?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) ?? "null";
-        debugString += $"\r\n    //{modelPropertyName} = {modelPropertyType} -------- {test}";
-
-        string? converterName = GetNamedArgument(propAttr, "Converter")?.Value.Value as string ?? null;
-        string? converterClassName = null; // = GetNamedArgument(propAttr, "ConverterType")?.Value.ToString() ?? null;
-
-        var converterArgument = GetNamedArgument(propAttr, "ConverterType");
-        if (converterArgument.HasValue && converterArgument.Value.Value.Value is ITypeSymbol typeSymbol)
-        {
-            // 3. Den vollständig qualifizierten Namen ermitteln
-            converterClassName = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        }
-
-        return new PropertyData
-        {
-            DataType = dataType,
-            ViewModelPropertyName = viewModelPropertyName,
-            ViewModelPropertyType = viewModelPropertyType,
-            ModelPropertyName = modelPropertyName,
-            ModelPropertyType = modelPropertyType,
-            Converter = converterName ?? converterClassName
-        };
-    }
-
-    private void CreateClassFile(INamedTypeSymbol cl)
+    private void CreateDeepMapClassFile(INamedTypeSymbol cl)
     {
         var attr = GetAttribute(cl, ObservableModelObjectAttribute!);
-        
+
         string modelType = attr != null ? attr.ConstructorArguments.FirstOrDefault().Value?.ToString() ?? "" : string.Empty;
         INamedTypeSymbol? modelSymbol = Compilation.GetTypeByMetadataName(modelType);
 
-        string test = modelSymbol?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) ?? "null"; 
+        string test = modelSymbol?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) ?? "null";
 
         string classNamespace = cl.ContainingNamespace?.ToDisplayString() ?? string.Empty;
 
@@ -152,13 +56,14 @@ partial class DeepExtensionsGenerator
 
             """);
 
-        foreach (var prop in GetProperties(cl))
+        // loop over all properties
+        foreach (var prop in cl.GetMembers().OfType<IPropertySymbol>())
         {
             var propAttr = GetAttribute(prop, ObservableModelPropertyAttribute!);
             if (propAttr != null)
             {
                 PropertyData propertyData = FindData(prop, propAttr, modelSymbol);
-                sb.AppendLine(CreateConstructorLine(propertyData));
+                sb.AppendLine(CreateMapConstructorLine(propertyData));
             }
         }
 
@@ -168,13 +73,14 @@ partial class DeepExtensionsGenerator
 
             """);
 
-        foreach (var prop in GetProperties(cl))
+        // loop over all properties 
+        foreach (var prop in cl.GetMembers().OfType<IPropertySymbol>())
         {
             var propAttr = GetAttribute(prop, ObservableModelPropertyAttribute!);
             if (propAttr != null)
             {
                 PropertyData propertyData = FindData(prop, propAttr, modelSymbol);
-                sb.AppendLine(CreateSetterMethods(propertyData));
+                sb.AppendLine(CreateMapSetterMethods(propertyData));
             }
         }
 
@@ -187,9 +93,9 @@ partial class DeepExtensionsGenerator
         AddSource($"{cl.Name}.g.cs", sb.ToString());
     }
 
-    
-   
-    public string CreateConstructorLine(PropertyData propertyData)
+
+
+    public string CreateMapConstructorLine(PropertyData propertyData)
     {
         return $"        // {propertyData.DataType}: vmName: {propertyData.ViewModelPropertyName} vmType: {propertyData.ViewModelPropertyType.TrimEnd('?')} mName: {propertyData.ModelPropertyName} mType: {propertyData.ModelPropertyType.TrimEnd('?')} converter: {propertyData.Converter}\r\n" +
             propertyData.DataType switch
@@ -217,7 +123,7 @@ partial class DeepExtensionsGenerator
             };
     }
 
-    public string CreateSetterMethods(PropertyData propertyData)
+    public string CreateMapSetterMethods(PropertyData propertyData)
     {
         return $"    // {propertyData.DataType}: vmName: {propertyData.ViewModelPropertyName} vmType: {propertyData.ViewModelPropertyType} mName: {propertyData.ModelPropertyName} mType: {propertyData.ModelPropertyType} converter: {propertyData.Converter}\r\n" +
             propertyData.DataType switch
@@ -340,5 +246,155 @@ partial class DeepExtensionsGenerator
                 _ => throw new ArgumentOutOfRangeException(nameof(propertyData.DataType), propertyData.DataType, null)
             };
     }
-   
+
+    public enum DataType { Error, Simple, Model, List, ModelList, ConverterFunc, ConverterClass }
+
+    public DataType GetDataType(IPropertySymbol prop, AttributeData propAttr)
+    {
+        if (HasNamedArgument(propAttr, "Converter"))
+        {
+            return DataType.ConverterFunc;
+        }
+        else if (HasNamedArgument(propAttr, "ConverterType"))
+        {
+            return DataType.ConverterClass;
+        }
+        else if (IsObservableCollection(prop.Type))
+        {
+            var innerType = GetInnerType(prop.Type)!;
+            if (ImplementsInterface(innerType, "System.ComponentModel.INotifyPropertyChanged"))
+            {
+                // type is a ViewModel type, because it implements INotifyPropertyChanged
+                return DataType.ModelList;
+            }
+            else
+            {
+                return DataType.List;
+            }
+        }
+        else
+        {
+            if (ImplementsInterface(prop.Type, "System.ComponentModel.INotifyPropertyChanged"))
+            {
+                return DataType.Model;
+            }
+            else
+            {
+                return DataType.Simple;
+            }
+        }
+    }
+
+    public struct PropertyData
+    {
+        public DataType DataType { get; set; }
+        public string ViewModelPropertyName { get; set; }
+        public string ViewModelPropertyType { get; set; }
+        public string ModelPropertyName { get; set; }
+        public string ModelPropertyType { get; set; }
+        public string? Converter { get; set; }
+    }
+
+    private PropertyData FindData(IPropertySymbol prop, AttributeData propAttr, INamedTypeSymbol? modelSymbol)
+    {
+        DataType dataType = GetDataType(prop, propAttr);
+        string viewModelPropertyName = prop.Name;
+        string viewModelPropertyType = IsObservableCollection(prop.Type) ? GetInnerType(prop.Type)!.ToDisplayString() : prop.Type.ToDisplayString();
+
+        string modelPropertyName = propAttr.ConstructorArguments.FirstOrDefault().Value?.ToString() ?? prop.Name;
+        //string modelPropertyType = modelSymbol?.GetMembers(modelPropertyName).OfType<IPropertySymbol>().FirstOrDefault()?.Type.ToDisplayString()!;
+        string modelPropertyType = GetPropertyTypeRecursive(modelSymbol!, modelPropertyName);
+
+        string test = modelSymbol?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) ?? "null";
+        debugString += $"\r\n    //{modelPropertyName} = {modelPropertyType} -------- {test}";
+
+        string? converterName = GetNamedArgument(propAttr, "Converter")?.Value.Value as string ?? null;
+        string? converterClassName = null; // = GetNamedArgument(propAttr, "ConverterType")?.Value.ToString() ?? null;
+
+        var converterArgument = GetNamedArgument(propAttr, "ConverterType");
+        if (converterArgument.HasValue && converterArgument.Value.Value.Value is ITypeSymbol typeSymbol)
+        {
+            // 3. Den vollständig qualifizierten Namen ermitteln
+            converterClassName = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        }
+
+        return new PropertyData
+        {
+            DataType = dataType,
+            ViewModelPropertyName = viewModelPropertyName,
+            ViewModelPropertyType = viewModelPropertyType,
+            ModelPropertyName = modelPropertyName,
+            ModelPropertyType = modelPropertyType,
+            Converter = converterName ?? converterClassName
+        };
+    }
+
+    public string GetPropertyTypeRecursive(ITypeSymbol symbol, string propertyName)
+    {
+        var currentSymbol = symbol;
+
+        // Schleife wandert die Vererbungskette nach oben (bis zu Object)
+        while (currentSymbol != null)
+        {
+            var property = currentSymbol.GetMembers(propertyName).OfType<IPropertySymbol>().FirstOrDefault();
+            if (property != null)
+            {
+                return property.Type.ToDisplayString();
+            }
+
+            // Eine Ebene nach oben in der Vererbung gehen
+            currentSymbol = currentSymbol.BaseType;
+        }
+
+        return string.Empty;
+    }
+
+    public bool IsObservableCollection(ITypeSymbol symbol) => symbol is INamedTypeSymbol namedType && namedType.IsGenericType && namedType.OriginalDefinition.ToDisplayString() == "System.Collections.ObjectModel.ObservableCollection<T>";
+
+    public ITypeSymbol? GetInnerType(ITypeSymbol symbol, int index = 0)
+    {
+        if (symbol is INamedTypeSymbol named && named.TypeArguments.Length > index)
+        {
+            var arg = named.TypeArguments[index];
+            // If the symbol is an unbound generic (type parameter) there's no concrete inner type:
+            if (arg is ITypeParameterSymbol)
+                return null;
+            return arg;
+        }
+
+        if (symbol is IArrayTypeSymbol arr)
+            return arr.ElementType;
+
+        if (symbol is IPointerTypeSymbol ptr)
+            return ptr.PointedAtType;
+        return null;
+    }
+
+    public bool ImplementsInterface(ITypeSymbol symbol, string interfaceFullyQualifiedName)
+    {
+        if (symbol.AllInterfaces.Any(i => i.ToDisplayString() == interfaceFullyQualifiedName))
+        {
+            return true;
+        }
+
+        if (symbol is INamedTypeSymbol namedType && namedType.ToDisplayString() == interfaceFullyQualifiedName)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    public bool HasNamedArgument(AttributeData data, string name) => data.NamedArguments.Any(a => a.Key == name);
+
+    public KeyValuePair<string, TypedConstant>? GetNamedArgument(AttributeData data, string name) => data.NamedArguments.FirstOrDefault(a => a.Key == name);
+
+    public AttributeData? GetAttribute(INamedTypeSymbol obj, INamedTypeSymbol attribute)
+    {
+        return obj.GetAttributes().FirstOrDefault(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, attribute));
+    }
+
+    public AttributeData? GetAttribute(IPropertySymbol obj, INamedTypeSymbol attribute)
+    {
+        return obj.GetAttributes().FirstOrDefault(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, attribute));
+    }
 }

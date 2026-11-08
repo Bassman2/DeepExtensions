@@ -52,7 +52,6 @@ public partial class DeepExtensionsGenerator : IIncrementalGenerator
         Context = context;
         Compilation = tuple.Left;
         Classes = [.. tuple.Right.Where(i => i is ClassDeclarationSyntax).Cast<ClassDeclarationSyntax>()];         // OfType<string>();
-        //Enums = [.. tuple.Right.Where(i => i is EnumDeclarationSyntax).Cast<EnumDeclarationSyntax>()];
         try
         {
             context.AddSource("Statistc.g.cs",
@@ -66,7 +65,7 @@ public partial class DeepExtensionsGenerator : IIncrementalGenerator
 
             GenerateDeepCopy();
             GenerateDeepEqual();
-            //GenerateDeepMap();
+            GenerateDeepMap();
         }
         catch (Exception ex)
         {
