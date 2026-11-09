@@ -55,7 +55,7 @@ public partial class BaseModel
 
 partial class DemoModel : IDeepCopy<DemoModel>
 {
-    public override DemoModel DeepCopy()
+    public new DemoModel DeepCopy()
     {
         var copy = new DemoModel();
         DeepCopyTo(copy);
@@ -72,7 +72,7 @@ partial class DemoModel : IDeepCopy<DemoModel>
 
 partial class BaseModel : IDeepCopy<BaseModel>
 {
-    public virtual BaseModel DeepCopy()
+    public BaseModel DeepCopy()
     {
         var copy = new BaseModel();
         DeepCopyTo(copy);
