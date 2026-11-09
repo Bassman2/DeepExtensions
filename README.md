@@ -138,6 +138,8 @@ partial class DemoModel : IDeepEqual<DemoModel>
 Mapping between Model and ViewModel trees
 * Custom converters
 
+In contrast to DeepCopy and DeepEqual, this approach uses explicit opt-in. This means that all properties intended for mapping must be decorated with [DeepMapProperty].
+
 ## Examples
 ### Simple Types
 Synchronizing properties with simple data types between the Model and the ViewModel. 
