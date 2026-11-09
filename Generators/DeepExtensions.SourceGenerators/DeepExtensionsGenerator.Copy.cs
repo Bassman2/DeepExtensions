@@ -32,7 +32,7 @@ partial class DeepExtensionsGenerator
 
             partial class {{cl.Name}} : IDeepCopy<{{cl.Name}}>
             {
-                public {{(hasLocalBaseClass ? "override" : "virtual")}} {{cl.Name}} DeepCopy()
+                public{{(hasLocalBaseClass ? " new" : "")}} {{cl.Name}} DeepCopy()
                 {
                     var copy = new {{cl.Name}}();
                     DeepCopyTo(copy);

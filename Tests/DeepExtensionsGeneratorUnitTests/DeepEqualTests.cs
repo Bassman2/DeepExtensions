@@ -1,4 +1,6 @@
-﻿namespace DeepExtensionsGeneratorUnitTests;
+﻿using DeepExtensionsGeneratorUnitTests.Models;
+
+namespace DeepExtensionsGeneratorUnitTests;
 
 [TestClass]
 public sealed class DeepEqualTests

@@ -4,7 +4,7 @@ using DeepExtensionsGeneratorUnitTests.Models;
 
 namespace DeepExtensionsGeneratorUnitTests.ViewModels;
 
-[DeepMap(typeof(List<MapSelfLeafModel>))]
+//[DeepMap(typeof(List<MapSelfLeafModel>))]
 public partial class MapSelfSectionViewModel : ObservableObject
 {
 }
