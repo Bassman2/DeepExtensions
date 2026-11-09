@@ -159,7 +159,6 @@ public class DemoModel
 ```
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeepExtensions;
-using ObservableModelGeneratorUnitTests.Models;
 
 namespace Demo.ViewModels;
 
@@ -186,7 +185,6 @@ public class DemoModel
 ```
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeepExtensions;
-using ObservableModelGeneratorUnitTests.Models;
 
 namespace Demo.ViewModels;
 
@@ -213,7 +211,6 @@ public class DemoModel
 ```
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeepExtensions;
-using ObservableModelGeneratorUnitTests.Models;
 
 namespace Demo.ViewModels;
 
@@ -245,7 +242,6 @@ public class LeafModel
 ```
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeepExtensions;
-using ObservableModelGeneratorUnitTests.Models;
 
 namespace Demo.ViewModels;
 
@@ -285,7 +281,6 @@ public class LeafModel
 ```
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeepExtensions;
-using ObservableModelGeneratorUnitTests.Models;
 
 namespace Demo.ViewModels;
 
@@ -321,7 +316,6 @@ public class DemoModel
 ```
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeepExtensions;
-using ObservableModelGeneratorUnitTests.Models;
 
 namespace Demo.ViewModels;
 
@@ -353,7 +347,6 @@ public class DemoModel
 ```
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeepExtensions;
-using ObservableModelGeneratorUnitTests.Models;
 
 namespace Demo.ViewModels;
 
