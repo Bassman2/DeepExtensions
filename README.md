@@ -269,7 +269,7 @@ namespace Demo.Models;
 
 public class RootModel
 {
-    public List<LeafModel> Leafs { get; set; } = [new LeafModel(), new LeafModel()];
+    public List<LeafModel> Leaves { get; set; } = [new LeafModel(), new LeafModel()];
 }
 
 public class LeafModel
@@ -289,7 +289,7 @@ public partial class RootViewModel : ObservableObject
 {
     // no partial, no set, no nullable, and no [ObservableProperty]
     [DeepMapProperty]
-    public ObservableCollection<LeafViewModel> Leafs { get; }
+    public ObservableCollection<LeafViewModel> Leaves { get; }
 }
 
 [DeepMap(typeof(LeafModel))]
