@@ -96,7 +96,7 @@ partial class DemoModel : IDeepEqual<DemoModel>
         if (value is null) return false;
         return
             Name == value.Name &&
-            (Sub is null && value.Sub is null) || (Sun is not null && Sub.DeepEqual(value.Sub);
+            (Sub is null && value.Sub is null) || (Sub is not null && Sub.DeepEqual(value.Sub);
     }
 }
 ```
