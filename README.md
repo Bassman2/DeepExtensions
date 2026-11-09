@@ -64,7 +64,7 @@ partial class DemoModel : IDeepCopy<DemoModel>
         return copy;
     }
 
-    protected void DeepCopyTo(CopyRootModel target)
+    protected void DeepCopyTo(DemoModel target)
     {
         base.DeepCopyTo(target);
         target.Name = this.Name;
