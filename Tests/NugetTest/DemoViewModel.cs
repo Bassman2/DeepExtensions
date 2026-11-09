@@ -3,10 +3,10 @@
 
 //namespace NugetTest;
 
-//[ObservableModelObject(typeof(DemoModel))]
+//[DeepMap(typeof(DemoModel))]
 //public partial class DemoViewModel : ObservableObject           
 //{
 //    [ObservableProperty]
-//    [ObservableModelProperty]
+//    [DeepMapProperty]
 //    public partial string Name { get; set; }
 //}

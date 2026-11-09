@@ -1,4 +1,6 @@
-﻿namespace DeepExtensionsGeneratorUnitTests.Models;
+﻿using DeepExtensions;
+
+namespace DeepExtensionsGeneratorUnitTests.Models;
 
 public partial class EqualBaseModel
 {

@@ -27,6 +27,8 @@ partial class DeepExtensionsGenerator
             // Suppress warnings about [Obsolete] member usage in generated code.
             #pragma warning disable CS0612, CS0618
             
+            using DeepExtensions;
+
             namespace {{classNamespace}};
 
             partial class {{cl.Name}} : IDeepEqual<{{cl.Name}}>

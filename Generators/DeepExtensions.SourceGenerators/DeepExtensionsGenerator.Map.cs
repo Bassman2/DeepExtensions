@@ -2,19 +2,10 @@
 
 partial class DeepExtensionsGenerator
 {
-    private const string ObservableModelObjectAttributeName = "MvvmToolbox.ComponentModel.ObservableModelObjectAttribute";
-    private const string ObservableModelPropertyAttributeName = "MvvmToolbox.ComponentModel.ObservableModelPropertyAttribute";
-
-    private INamedTypeSymbol? ObservableModelObjectAttribute;
-    private INamedTypeSymbol? ObservableModelPropertyAttribute;
-
     private string debugString = string.Empty;
 
     private void GenerateDeepMap()
     {
-        ObservableModelObjectAttribute = Compilation.GetTypeByMetadataName(ObservableModelObjectAttributeName);
-        ObservableModelPropertyAttribute = Compilation.GetTypeByMetadataName(ObservableModelPropertyAttributeName);
-
         foreach (var cl in mapClassCollection?.Classes ?? [])
         {
             CreateDeepMapClassFile(cl);
@@ -23,7 +14,7 @@ partial class DeepExtensionsGenerator
 
     private void CreateDeepMapClassFile(INamedTypeSymbol cl)
     {
-        var attr = GetAttribute(cl, ObservableModelObjectAttribute!);
+        var attr = GetAttribute(cl, DeepMapAttribute!);
 
         string modelType = attr != null ? attr.ConstructorArguments.FirstOrDefault().Value?.ToString() ?? "" : string.Empty;
         INamedTypeSymbol? modelSymbol = Compilation.GetTypeByMetadataName(modelType);
@@ -43,6 +34,8 @@ partial class DeepExtensionsGenerator
 
             // Suppress warnings about [Obsolete] member usage in generated code.
             #pragma warning disable CS0612, CS0618
+
+            using DeepExtensions;
             
             namespace {{classNamespace}};
 
@@ -59,7 +52,7 @@ partial class DeepExtensionsGenerator
         // loop over all properties
         foreach (var prop in cl.GetMembers().OfType<IPropertySymbol>())
         {
-            var propAttr = GetAttribute(prop, ObservableModelPropertyAttribute!);
+            var propAttr = GetAttribute(prop, DeepMapPropertyAttribute!);
             if (propAttr != null)
             {
                 PropertyData propertyData = FindData(prop, propAttr, modelSymbol);
@@ -76,7 +69,7 @@ partial class DeepExtensionsGenerator
         // loop over all properties 
         foreach (var prop in cl.GetMembers().OfType<IPropertySymbol>())
         {
-            var propAttr = GetAttribute(prop, ObservableModelPropertyAttribute!);
+            var propAttr = GetAttribute(prop, DeepMapPropertyAttribute!);
             if (propAttr != null)
             {
                 PropertyData propertyData = FindData(prop, propAttr, modelSymbol);

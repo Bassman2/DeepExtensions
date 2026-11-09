@@ -1,4 +1,6 @@
-﻿namespace DeepExtensionsGeneratorUnitTests.Models;
+﻿using DeepExtensions;
+
+namespace DeepExtensionsGeneratorUnitTests.Models;
 
 [DeepEqual, DeepCopy]
 public partial class EqualRootModel : EqualBaseModel

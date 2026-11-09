@@ -1,23 +1,11 @@
-﻿
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
-
-
-namespace DeepExtensions.SourceGenerators;
+﻿namespace DeepExtensions.SourceGenerators;
 
 [Generator(LanguageNames.CSharp)]
 public partial class DeepExtensionsGenerator : IIncrementalGenerator
 {
-
     private ClassCollection? copyClassCollection;
     private ClassCollection? equalClassCollection;
     private ClassCollection? mapClassCollection;
-
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -42,12 +30,11 @@ public partial class DeepExtensionsGenerator : IIncrementalGenerator
 
     private void Execute(SourceProductionContext context, (Compilation Left, ImmutableArray<BaseTypeDeclarationSyntax> Right) tuple)
     {
-        DeepCopyIgnoreAttribute = tuple.Left.GetTypeByMetadataName(DeepCopyIgnoreAttributeName)!;
-        DeepEqualIgnoreAttribute = tuple.Left.GetTypeByMetadataName(DeepEqualIgnoreAttributeName)!;
-
+        CreateAttributeSymbols(tuple.Left);
+        
         copyClassCollection = ClassCollection.Collect(context, tuple, DeepCopyAttributeName, DeepCopyIgnoreAttributeName);
         equalClassCollection = ClassCollection.Collect(context, tuple, DeepEqualAttributeName, DeepEqualIgnoreAttributeName);
-        mapClassCollection = ClassCollection.Collect(context, tuple, DeepMapAttributeName, DeepMapIgnoreAttributeName);
+        mapClassCollection = ClassCollection.Collect(context, tuple, DeepMapAttributeName, DeepMapIgnoreAttributeName, true);
 
         Context = context;
         Compilation = tuple.Left;
@@ -57,9 +44,12 @@ public partial class DeepExtensionsGenerator : IIncrementalGenerator
             context.AddSource("Statistc.g.cs",
                 $$"""
                 /*
-                Copy:  {{copyClassCollection?.Classes.Count() ?? 0}} {{string.Join(", ", copyClassCollection?.Classes.Select(c => c.ToDisplayString()) ?? [])}}
-                Equal: {{equalClassCollection?.Classes.Count() ?? 0}} {{string.Join(", ", equalClassCollection?.Classes.Select(c => c.ToDisplayString()) ?? [])}}
-                Map:   {{mapClassCollection?.Classes.Count() ?? 0}} {{string.Join(", ", mapClassCollection?.Classes.Select(c => c.ToDisplayString()) ?? [])}}
+                Copy:  {{copyClassCollection?.Classes.Count() ?? 0}} 
+                    {{string.Join("\r\n    ", copyClassCollection?.Classes.Select(c => c.ToDisplayString()) ?? [])}}
+                Equal: {{equalClassCollection?.Classes.Count() ?? 0}} 
+                    {{string.Join("\r\n    ", equalClassCollection?.Classes.Select(c => c.ToDisplayString()) ?? [])}}
+                Map:   {{mapClassCollection?.Classes.Count() ?? 0}} 
+                    {{string.Join("\r\n    ", mapClassCollection?.Classes.Select(c => c.ToDisplayString()) ?? [])}}
                 */
                 """);
 

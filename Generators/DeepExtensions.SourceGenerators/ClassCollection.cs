@@ -11,6 +11,8 @@ public class ClassCollection
     private readonly INamedTypeSymbol findAttr;
     private readonly INamedTypeSymbol ignoreAttr;
 
+    private bool isMap = false;
+
     public IEnumerable<INamedTypeSymbol> Classes => items.Values;
 
     protected ClassDeclarationSyntax[] allClasses = [];
@@ -23,7 +25,8 @@ public class ClassCollection
         SourceProductionContext context,
         (Compilation Left, ImmutableArray<BaseTypeDeclarationSyntax> Right) tuple,
         string findAttr, 
-        string ignoreAttr)
+        string ignoreAttr,
+        bool isMap)
     {
         this.context = context;
         this.compilation = tuple.Left;
@@ -36,9 +39,10 @@ public class ClassCollection
         SourceProductionContext context,
         (Compilation Left, ImmutableArray<BaseTypeDeclarationSyntax> Right) tuple,
         string findAttr,
-        string ignoreAttr)
+        string ignoreAttr,
+        bool isMap = false)
     {
-        var collection = new ClassCollection(context, tuple, findAttr, ignoreAttr);
+        var collection = new ClassCollection(context, tuple, findAttr, ignoreAttr, isMap);
         collection.Collect();
         return collection;
     }
@@ -78,11 +82,15 @@ public class ClassCollection
         // add to collection
         items.Add(cl.ToDisplayString(formatWithoutNullable), cl);
 
-        // loop over all base classes
-        for (var current = cl.BaseType; current != null && current.SpecialType != SpecialType.System_Object; current = current.BaseType)
+        // loop over all base classes inside this assembly (DeclaringSyntaxReferences.Length > 0)
+        for (var current = cl.BaseType; current != null && current.DeclaringSyntaxReferences.Length > 0 /*&& current.SpecialType != SpecialType.System_Object*/; current = current.BaseType)
         {
             DeepScan(current);
         }
+               
+
+        if (isMap) return;
+
 
         // TODO: best prectise to make the recursive
 
