@@ -31,6 +31,8 @@ All properties with [DeepCopyIgnore] will be ignored.
 ## Example
 
 ```
+using DeepExtensions;
+
 namespace Demo.Models;
 
 [DeepCopy]
@@ -99,6 +101,8 @@ All properties with [DeepEqualIgnore] will be ignored.
 ## Example
 
 ```
+using DeepExtensions;
+
 namespace Demo.Models;
 
 [DeepEqual]
@@ -135,6 +139,8 @@ Mapping between Model and ViewModel trees
 Synchronizing properties with simple data types between the Model and the ViewModel. 
 #### Model
 ```
+using DeepExtensions;
+
 namespace Demo.Models;
 
 public class DemoModel
@@ -150,11 +156,11 @@ using ObservableModelGeneratorUnitTests.Models;
 
 namespace Demo.ViewModels;
 
-[ObservableModelObject(typeof(DemoModel))]
+[DeepMap(typeof(DemoModel))]
 public partial class DemoViewModel : ObservableObject
 {
     [ObservableProperty]
-    [ObservableModelProperty]
+    [DeepMapProperty]
     public partial string Name { get; set; }
 }
 ```
@@ -177,11 +183,11 @@ using ObservableModelGeneratorUnitTests.Models;
 
 namespace Demo.ViewModels;
 
-[ObservableModelObject(typeof(DemoModel))]
+[DeepMap(typeof(DemoModel))]
 public partial class DemoViewModel : ObservableObject
 {
     // no partial, no set, no nullable, and no [ObservableProperty]
-    [ObservableModelProperty]
+    [DeepMapProperty]
     public ObservableCollection<string> Names { get; }
 }
 ```
@@ -204,11 +210,11 @@ using ObservableModelGeneratorUnitTests.Models;
 
 namespace Demo.ViewModels;
 
-[ObservableModelObject(typeof(DemoModel))]
+[DeepMap(typeof(DemoModel))]
 public partial class DemoViewModel : ObservableObject
 {
     [ObservableProperty]
-    [ObservableModelProperty(nameof(DemoModel.Name))]
+    [DeepMapProperty(nameof(DemoModel.Name))]
     public partial string FirstName { get; set; }
 }
 ```
@@ -236,19 +242,19 @@ using ObservableModelGeneratorUnitTests.Models;
 
 namespace Demo.ViewModels;
 
-[ObservableModelObject(typeof(RootModel))]
+[DeepMap(typeof(RootModel))]
 public partial class RootViewModel : ObservableObject
 {
     [ObservableProperty]
-    [ObservableModelProperty]
+    [DeepMapProperty]
     public partial LeafViewModel? Leaf { get; set; }
 }
 
-[ObservableModelObject(typeof(LeafModel))]
+[DeepMap(typeof(LeafModel))]
 public partial class LeafViewModel : ObservableObject
 {
     [ObservableProperty]
-    [ObservableModelProperty]
+    [DeepMapProperty]
     public partial string Name { get; set; }
 }
 ```
@@ -276,19 +282,19 @@ using ObservableModelGeneratorUnitTests.Models;
 
 namespace Demo.ViewModels;
 
-[ObservableModelObject(typeof(RootModel))]
+[DeepMap(typeof(RootModel))]
 public partial class RootViewModel : ObservableObject
 {
     // no partial, no set, no nullable, and no [ObservableProperty]
-    [ObservableModelProperty]
+    [DeepMapProperty]
     public ObservableCollection<LeafViewModel> Leafs { get; }
 }
 
-[ObservableModelObject(typeof(LeafModel))]
+[DeepMap(typeof(LeafModel))]
 public partial class LeafViewModel : ObservableObject
 {
     [ObservableProperty]
-    [ObservableModelProperty]
+    [DeepMapProperty]
     public partial string Name { get; set; }
 }
 ```
@@ -312,11 +318,11 @@ using ObservableModelGeneratorUnitTests.Models;
 
 namespace Demo.ViewModels;
 
-[ObservableModelObject(typeof(DemoModel))]
+[DeepMap(typeof(DemoModel))]
 public partial class DemoViewModel : ObservableObject
 {
     [ObservableProperty]
-    [ObservableModelProperty(Converter = "NumConvert")]
+    [DeepMapProperty(Converter = "NumConvert")]
     public partial string Num { get; set; }
 
     private string GetNumConvert(int val) => val.ToString();
@@ -344,11 +350,11 @@ using ObservableModelGeneratorUnitTests.Models;
 
 namespace Demo.ViewModels;
 
-[ObservableModelObject(typeof(DemoModel))]
+[DeepMap(typeof(DemoModel))]
 public partial class DemoViewModel : ObservableObject
 {
     [ObservableProperty]
-    [ObservableModelProperty(ConverterType = typeof(IntToStringConverter))]
+    [DeepMapProperty(ConverterType = typeof(IntToStringConverter))]
     public partial string Num { get; set; }
 
     private string GetNumConvert(int val) => val.ToString();
