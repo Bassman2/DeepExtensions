@@ -18,6 +18,8 @@ The Deep Extensions are a collection of three Deep features based on Source Gene
 
 Generates code for deep copy.
 
+An opt-out / automatic matching approach is used. This means that all properties not marked with [DeepCopyIgnore] will be copied.
+
 ## Attributes
 
 ### [DeepCopy]
@@ -31,6 +33,8 @@ All properties with [DeepCopyIgnore] will be ignored.
 ## Example
 
 ```
+using DeepExtensions;
+
 namespace Demo.Models;
 
 [DeepCopy]
@@ -53,14 +57,14 @@ public partial class BaseModel
 
 partial class DemoModel : IDeepCopy<DemoModel>
 {
-    public override DemoModel DeepCopy()
+    public new DemoModel DeepCopy()
     {
         var copy = new DemoModel();
         DeepCopyTo(copy);
         return copy;
     }
 
-    protected void DeepCopyTo(CopyRootModel target)
+    protected void DeepCopyTo(DemoModel target)
     {
         base.DeepCopyTo(target);
         target.Name = this.Name;
@@ -70,7 +74,7 @@ partial class DemoModel : IDeepCopy<DemoModel>
 
 partial class BaseModel : IDeepCopy<BaseModel>
 {
-    public virtual BaseModel DeepCopy()
+    public BaseModel DeepCopy()
     {
         var copy = new BaseModel();
         DeepCopyTo(copy);
@@ -88,6 +92,8 @@ partial class BaseModel : IDeepCopy<BaseModel>
 
 Generates code for deep equal.
 
+An opt-out / automatic matching approach is used. This means that all properties not marked with [DeepEqualIgnore] will be compared.
+
 ### [DeepEqual]
 
 The [DeepEqual] attribute only needs to be placed on the root element; it signals that a deep equal should be generated recursively for this class, all its base classes, and all its property classes.
@@ -99,6 +105,8 @@ All properties with [DeepEqualIgnore] will be ignored.
 ## Example
 
 ```
+using DeepExtensions;
+
 namespace Demo.Models;
 
 [DeepEqual]
@@ -121,20 +129,25 @@ partial class DemoModel : IDeepEqual<DemoModel>
         if (value is null) return false;
         return
             Name == value.Name &&
-            (Sub is null && value.Sub is null) || (Sub is not null && Sub.DeepEqual(value.Sub);
+            ((Sub is null && value.Sub is null) || (Sub is not null && Sub.DeepEqual(value.Sub)));
     }
 }
 ```
 
 # DeepMap 
+
 Mapping between Model and ViewModel trees
 * Custom converters
+
+In contrast to DeepCopy and DeepEqual, this approach uses explicit opt-in. This means that all properties intended for mapping must be decorated with [DeepMapProperty].
 
 ## Examples
 ### Simple Types
 Synchronizing properties with simple data types between the Model and the ViewModel. 
 #### Model
 ```
+using DeepExtensions;
+
 namespace Demo.Models;
 
 public class DemoModel
@@ -146,15 +159,14 @@ public class DemoModel
 ```
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeepExtensions;
-using ObservableModelGeneratorUnitTests.Models;
 
 namespace Demo.ViewModels;
 
-[ObservableModelObject(typeof(DemoModel))]
+[DeepMap(typeof(DemoModel))]
 public partial class DemoViewModel : ObservableObject
 {
     [ObservableProperty]
-    [ObservableModelProperty]
+    [DeepMapProperty]
     public partial string Name { get; set; }
 }
 ```
@@ -173,15 +185,14 @@ public class DemoModel
 ```
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeepExtensions;
-using ObservableModelGeneratorUnitTests.Models;
 
 namespace Demo.ViewModels;
 
-[ObservableModelObject(typeof(DemoModel))]
+[DeepMap(typeof(DemoModel))]
 public partial class DemoViewModel : ObservableObject
 {
     // no partial, no set, no nullable, and no [ObservableProperty]
-    [ObservableModelProperty]
+    [DeepMapProperty]
     public ObservableCollection<string> Names { get; }
 }
 ```
@@ -200,15 +211,14 @@ public class DemoModel
 ```
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeepExtensions;
-using ObservableModelGeneratorUnitTests.Models;
 
 namespace Demo.ViewModels;
 
-[ObservableModelObject(typeof(DemoModel))]
+[DeepMap(typeof(DemoModel))]
 public partial class DemoViewModel : ObservableObject
 {
     [ObservableProperty]
-    [ObservableModelProperty(nameof(DemoModel.Name))]
+    [DeepMapProperty(nameof(DemoModel.Name))]
     public partial string FirstName { get; set; }
 }
 ```
@@ -232,23 +242,22 @@ public class LeafModel
 ```
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeepExtensions;
-using ObservableModelGeneratorUnitTests.Models;
 
 namespace Demo.ViewModels;
 
-[ObservableModelObject(typeof(RootModel))]
+[DeepMap(typeof(RootModel))]
 public partial class RootViewModel : ObservableObject
 {
     [ObservableProperty]
-    [ObservableModelProperty]
+    [DeepMapProperty]
     public partial LeafViewModel? Leaf { get; set; }
 }
 
-[ObservableModelObject(typeof(LeafModel))]
+[DeepMap(typeof(LeafModel))]
 public partial class LeafViewModel : ObservableObject
 {
     [ObservableProperty]
-    [ObservableModelProperty]
+    [DeepMapProperty]
     public partial string Name { get; set; }
 }
 ```
@@ -260,7 +269,7 @@ namespace Demo.Models;
 
 public class RootModel
 {
-    public List<LeafModel> Leafs { get; set; } = [new LeafModel(), new LeafModel()];
+    public List<LeafModel> Leaves { get; set; } = [new LeafModel(), new LeafModel()];
 }
 
 public class LeafModel
@@ -272,23 +281,22 @@ public class LeafModel
 ```
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeepExtensions;
-using ObservableModelGeneratorUnitTests.Models;
 
 namespace Demo.ViewModels;
 
-[ObservableModelObject(typeof(RootModel))]
+[DeepMap(typeof(RootModel))]
 public partial class RootViewModel : ObservableObject
 {
     // no partial, no set, no nullable, and no [ObservableProperty]
-    [ObservableModelProperty]
-    public ObservableCollection<LeafViewModel> Leafs { get; }
+    [DeepMapProperty]
+    public ObservableCollection<LeafViewModel> Leaves { get; }
 }
 
-[ObservableModelObject(typeof(LeafModel))]
+[DeepMap(typeof(LeafModel))]
 public partial class LeafViewModel : ObservableObject
 {
     [ObservableProperty]
-    [ObservableModelProperty]
+    [DeepMapProperty]
     public partial string Name { get; set; }
 }
 ```
@@ -308,15 +316,14 @@ public class DemoModel
 ```
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeepExtensions;
-using ObservableModelGeneratorUnitTests.Models;
 
 namespace Demo.ViewModels;
 
-[ObservableModelObject(typeof(DemoModel))]
+[DeepMap(typeof(DemoModel))]
 public partial class DemoViewModel : ObservableObject
 {
     [ObservableProperty]
-    [ObservableModelProperty(Converter = "NumConvert")]
+    [DeepMapProperty(Converter = "NumConvert")]
     public partial string Num { get; set; }
 
     private string GetNumConvert(int val) => val.ToString();
@@ -340,19 +347,15 @@ public class DemoModel
 ```
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeepExtensions;
-using ObservableModelGeneratorUnitTests.Models;
 
 namespace Demo.ViewModels;
 
-[ObservableModelObject(typeof(DemoModel))]
+[DeepMap(typeof(DemoModel))]
 public partial class DemoViewModel : ObservableObject
 {
     [ObservableProperty]
-    [ObservableModelProperty(ConverterType = typeof(IntToStringConverter))]
+    [DeepMapProperty(ConverterType = typeof(IntToStringConverter))]
     public partial string Num { get; set; }
-
-    private string GetNumConvert(int val) => val.ToString();
-    private int SetNumConvert(string val) => int.Parse(val);
 
     public class IntToStringConverter : IPropertyConverter
     {
