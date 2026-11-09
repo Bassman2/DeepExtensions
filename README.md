@@ -18,6 +18,8 @@ The Deep Extensions are a collection of three Deep features based on Source Gene
 
 Generates code for deep copy.
 
+An opt-out / automatic matching approach is used. This means that all properties not marked with [DeepCopyIgnore] will be copied.
+
 ## Attributes
 
 ### [DeepCopy]
@@ -89,6 +91,8 @@ partial class BaseModel : IDeepCopy<BaseModel>
 # DeepEqual
 
 Generates code for deep equal.
+
+An opt-out / automatic matching approach is used. This means that all properties not marked with [DeepEqualIgnore] will be compared.
 
 ### [DeepEqual]
 
