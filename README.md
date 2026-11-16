@@ -357,7 +357,7 @@ public partial class DemoViewModel : ObservableObject
     [DeepMapProperty(ConverterType = typeof(IntToStringConverter))]
     public partial string Num { get; set; }
 
-    public class IntToStringConverter : IPropertyConverter
+    public class IntToStringConverter : IDeepMapPropertyConverter
     {
         public object Convert(object value) => value?.ToString()!;
         public object ConvertBack(object value) => (value is string input && int.TryParse(input, out int result)) ? result : null!;
