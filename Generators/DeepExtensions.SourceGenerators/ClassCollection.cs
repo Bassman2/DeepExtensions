@@ -11,7 +11,7 @@ public class ClassCollection
     private readonly INamedTypeSymbol findAttr;
     private readonly INamedTypeSymbol ignoreAttr;
 
-    private bool isMap = false;
+    private bool deep = false;
 
     public IEnumerable<INamedTypeSymbol> Classes => items.Values;
 
@@ -26,13 +26,14 @@ public class ClassCollection
         (Compilation Left, ImmutableArray<BaseTypeDeclarationSyntax> Right) tuple,
         string findAttr, 
         string ignoreAttr,
-        bool isMap)
+        bool deep)
     {
         this.context = context;
         this.compilation = tuple.Left;
         this.immutableArray = tuple.Right;
         this.findAttr = compilation.GetTypeByMetadataName(findAttr)!;
         this.ignoreAttr = compilation.GetTypeByMetadataName(ignoreAttr)!;
+        this.deep = deep;
     }
 
     public static ClassCollection Collect(
@@ -40,9 +41,9 @@ public class ClassCollection
         (Compilation Left, ImmutableArray<BaseTypeDeclarationSyntax> Right) tuple,
         string findAttr,
         string ignoreAttr,
-        bool isMap = false)
+        bool deep)
     {
-        var collection = new ClassCollection(context, tuple, findAttr, ignoreAttr, isMap);
+        var collection = new ClassCollection(context, tuple, findAttr, ignoreAttr, deep);
         collection.Collect();
         return collection;
     }
@@ -76,21 +77,19 @@ public class ClassCollection
         }
 
         // already in the collection
-        //if (items.ContainsKey(cl.ToDisplayString())) return;
         if (items.ContainsKey(cl.ToDisplayString(formatWithoutNullable))) return;
 
         // add to collection
         items.Add(cl.ToDisplayString(formatWithoutNullable), cl);
+
+
+        if (!deep) return;
 
         // loop over all base classes inside this assembly (DeclaringSyntaxReferences.Length > 0)
         for (var current = cl.BaseType; current != null && current.DeclaringSyntaxReferences.Length > 0 /*&& current.SpecialType != SpecialType.System_Object*/; current = current.BaseType)
         {
             DeepScan(current);
         }
-               
-
-        if (isMap) return;
-
 
         // TODO: best prectise to make the recursive
 

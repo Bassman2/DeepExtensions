@@ -32,9 +32,9 @@ public partial class DeepExtensionsGenerator : IIncrementalGenerator
     {
         CreateAttributeSymbols(tuple.Left);
         
-        copyClassCollection = ClassCollection.Collect(context, tuple, DeepCopyAttributeName, DeepCopyIgnoreAttributeName);
-        equalClassCollection = ClassCollection.Collect(context, tuple, DeepEqualAttributeName, DeepEqualIgnoreAttributeName);
-        mapClassCollection = ClassCollection.Collect(context, tuple, DeepMapAttributeName, DeepMapIgnoreAttributeName, true);
+        copyClassCollection = ClassCollection.Collect(context, tuple, DeepCopyAttributeName, DeepCopyIgnoreAttributeName, true);
+        equalClassCollection = ClassCollection.Collect(context, tuple, DeepEqualAttributeName, DeepEqualIgnoreAttributeName, true);
+        mapClassCollection = ClassCollection.Collect(context, tuple, DeepMapAttributeName, DeepMapIgnoreAttributeName, false);
 
         Context = context;
         Compilation = tuple.Left;

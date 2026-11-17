@@ -22,7 +22,7 @@ partial class DeepExtensionsGenerator
     {
         ITypeSymbol typeSymbol = prop.Type;
         // Handle map-specific type classification
-        //if (isMap)
+        //if (deep)
         //{
         //    if (HasNamedArgument(propAttr, "Converter"))
         //    {
