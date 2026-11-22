@@ -8,6 +8,7 @@ The Deep Extensions are a collection of three Deep features based on Source Gene
 * Trimmable
 * CommunityToolkit.Mvvm compatible.
 * WPF, WinUI, and Avalonia compatible.
+* Resolving circular references during deep copy
 
 # Installation
 
