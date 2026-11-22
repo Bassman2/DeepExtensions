@@ -14,6 +14,11 @@ The Deep Extensions are a collection of three Deep features based on Source Gene
 
 [Nuget package](https://www.nuget.org/packages/DeepExtensions)
 
+.NET CLI-Befehl 
+```
+dotnet add package DeepExtensions
+```
+
 # Built-in Roslyn analyzers & clear compiler diagnostics
 * DEEPGEN001 Class is not partial
 
