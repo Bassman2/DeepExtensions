@@ -93,6 +93,7 @@ partial class DeepExtensionsGenerator
             public interface IDeepCopy<T>
             {
                 T DeepCopy();
+                T DeepCopy(Dictionary<object, object>? visited);
             }
 
             public interface IDeepEqual<T>

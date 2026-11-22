@@ -34,19 +34,32 @@ partial class DeepExtensionsGenerator
             {
                 public{{(hasLocalBaseClass ? " new" : "")}} {{cl.Name}} DeepCopy()
                 {
+                    return DeepCopy(new Dictionary<object, object>(ReferenceEqualityComparer.Instance));
+                }
+
+                public{{(hasLocalBaseClass ? " new" : "")}} {{cl.Name}} DeepCopy(Dictionary<object, object>? visited)
+                {
+                    if (visited is not null && visited.TryGetValue(this, out var existing))
+                    {
+                        return ({{cl.Name}})existing;
+                    }
                     var copy = new {{cl.Name}}();
-                    DeepCopyTo(copy);
+                    if (visited != null)
+                    {
+                        visited[this] = copy;
+                    }
+                    DeepCopyTo(copy, visited);
                     return copy;
                 }
 
-                protected void DeepCopyTo({{cl.Name}} target)
+                protected void DeepCopyTo({{cl.Name}} target, Dictionary<object, object> visited)
                 {
 
             """);
 
         if (hasLocalBaseClass)
         {
-            sb.AppendLine("        base.DeepCopyTo(target);");
+            sb.AppendLine("        base.DeepCopyTo(target, visited);");
         }
 
         var properties = cl.GetMembers().OfType<IPropertySymbol>();
@@ -60,8 +73,8 @@ partial class DeepExtensionsGenerator
                 TypeClass.ValueArray =>         $"target.{prop.Name} = [.. this.{prop.Name}];",
                 TypeClass.ReferenceList =>      $"target.{prop.Name} = [.. DeepComparer.CopyItems(this.{prop.Name})];",
                 TypeClass.ValueList =>          $"target.{prop.Name} = [.. this.{prop.Name}];",
-                TypeClass.Reference =>          $"target.{prop.Name} = this.{prop.Name}.DeepCopy();",
-                TypeClass.NullableReference =>  $"target.{prop.Name} = this.{prop.Name}?.DeepCopy();",
+                TypeClass.Reference =>          $"target.{prop.Name} = this.{prop.Name}.DeepCopy(visited);",
+                TypeClass.NullableReference =>  $"target.{prop.Name} = this.{prop.Name}?.DeepCopy(visited);",
                 TypeClass.Value =>              $"target.{prop.Name} = this.{prop.Name};",
                 _ =>                            $"#warning Unknown type for property {prop.Name}, manual handling may be required."
             });
