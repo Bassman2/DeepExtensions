@@ -156,6 +156,8 @@ public class DemoModel
 }
 ```
 #### ViewModel
+
+for C# 13 / .NET 9 and CommunityToolkit.Mvvm 8.4+ only
 ```
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeepExtensions;
