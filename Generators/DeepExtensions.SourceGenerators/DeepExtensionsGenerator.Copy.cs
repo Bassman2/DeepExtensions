@@ -44,7 +44,7 @@ partial class DeepExtensionsGenerator
                         return ({{cl.Name}})existing;
                     }
                     var copy = new {{cl.Name}}();
-                    if (visited != null)
+                    if (visited is not null)
                     {
                         visited[this] = copy;
                     }
