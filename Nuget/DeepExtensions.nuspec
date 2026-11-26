@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>DeepExtensions</id>
-    <version>0.5.0</version>
+    <version>0.6.0</version>
     <title>DeepExtensions</title>
     <authors>Ralf Beckers</authors>
     <owners>Ralf Beckers</owners>
@@ -11,7 +11,7 @@
     <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
     <projectUrl>https://github.com/Bassman2/DeepExtensions</projectUrl>
     <description>DeepCode, DeepEqual and DeepMap Roslyn Incremental Source Generator</description>
-    <releaseNotes>Resolving circular references during a deep copy</releaseNotes>
+    <releaseNotes>Add Initialize to mapping</releaseNotes>
     <copyright>Copyright 2026 (c) by Ralf Beckers</copyright>
     <repository type="git" url="https://github.com/Bassman2/DeepExtensions" />
     <tags>DeepCopy DeepEqual DeepMap AOT Trimmable Roslyn Incremental Source Generator MVVM WPF Avalonia WinUI</tags>
