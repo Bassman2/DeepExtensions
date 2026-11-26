@@ -25,6 +25,11 @@ The Deep Extensions are a collection of three Deep features based on Source Gene
 # Built-in Roslyn analyzers & clear compiler diagnostics
 * DEEPGEN001 Class is not partial
 
+# Problems and Sulution
+* In the event of issues caused by duplicate generation in nested libraries, the following may help:
+```xml
+<PackageReference Include="DeepExtensions" Version="0.5.0" PrivateAssets="all" />
+```
 # DeepCopy
 
 Generates code for deep copy.
