@@ -47,6 +47,7 @@ partial class DeepExtensionsGenerator
             // add to collection
             GetOrCreate(classCollection, cl).Flags |= GenFlags.Map;
         }
+        CreateTraceFile(classCollection);
         return classCollection;
     }
 
@@ -176,5 +177,19 @@ partial class DeepExtensionsGenerator
             classCollection.Add(cl, data);
         }
         return data;
+    }
+
+    private void CreateTraceFile(Dictionary<INamedTypeSymbol, GenData> classCollection)
+    {
+
+        StringBuilder sb = new();
+        sb.AppendLine("/*");
+        foreach (var cl in classCollection.OrderBy(c => c.Key.ToDisplayString()))
+        {
+            sb.AppendLine($"{cl.Key.ToDisplayString()} : {cl.Value.Flags}");
+        }
+
+        sb.AppendLine("*/");
+        AddSource($"CollectorTrace.g.cs", sb.ToString());
     }
 }

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace DeepExtensions.SourceGenerators;
 
@@ -8,33 +10,37 @@ namespace DeepExtensions.SourceGenerators;
 
 partial class DeepExtensionsGenerator
 {
-    private void Generate()
+    private void Generate(Dictionary<INamedTypeSymbol, GenData> classCollection)
     {
-        foreach (var cl in copyClassCollection?.Classes ?? [])
+        AddSource($"Debug.g.cs", $"// Num: {classCollection.Count}");
+        foreach (var cl in classCollection)
         {
-            CreateDeepClassFile(cl);
+            CreateDeepClassFile(cl.Key, cl.Value.Flags);
         }
     }
 
-    private string CreateInterfaces(string className, GenFlags genFlags)
+    private string CreateInterfaces(string className, GenFlags flags)
     {
         string[] interfaces = [
-            .. genFlags.HasFlag(GenFlags.Copy) ? [$"IDeepCopy<{className}>"] : Array.Empty<string>(),
-            .. genFlags.HasFlag(GenFlags.Equal) ? [$"IDeepEqual<{className}>"] : Array.Empty<string>(),
+            .. flags.HasFlag(GenFlags.Copy) ? [$"IDeepCopy<{className}>"] : Array.Empty<string>(),
+            .. flags.HasFlag(GenFlags.Equal) ? [$"IDeepEqual<{className}>"] : Array.Empty<string>(),
             ];
         return interfaces.Length > 0 ? $" : {string.Join(", ", interfaces)}" : string.Empty;
     }
 
     // from DeepCopy
-    private void CreateDeepClassFile(INamedTypeSymbol cl)
+    private void CreateDeepClassFile(INamedTypeSymbol cl, GenFlags flags)
     {
         string classNamespace = cl.ContainingNamespace?.ToDisplayString(FormatWithoutNullable) ?? string.Empty;
         bool hasLocalBaseClass = cl.BaseType != null && cl.BaseType.SpecialType != SpecialType.System_Object
             && cl.BaseType.DeclaringSyntaxReferences.Length > 0; // check if in current assembly
 
-        string interfaces =  
+        //string classNamespace = cl.ContainingNamespace?.ToDisplayString() ?? string.Empty;
 
 
+        string interfaces = CreateInterfaces(cl.Name, flags);
+
+        string className = cl.Name;
 
         StringBuilder sb = new(
             $$"""
@@ -50,20 +56,217 @@ partial class DeepExtensionsGenerator
 
             namespace {{classNamespace}};
 
-            partial class {{cl.Name}} : IDeepCopy<{{cl.Name}}> IDeepCopy<{{cl.Name}}>
+            partial class {{className}} {{interfaces}}
             {
-                public{{(hasLocalBaseClass ? " new" : "")}} {{cl.Name}} DeepCopy()
+
+            """);
+
+        if (flags.HasFlag(GenFlags.Map))
+        {
+            AppendDeepMap(sb, cl, className, hasLocalBaseClass);
+        }
+        if (flags.HasFlag(GenFlags.Copy))
+        {
+            AppendDeepCopy(sb, cl, className, hasLocalBaseClass);
+        }
+        if (flags.HasFlag(GenFlags.Equal))
+        {
+            AppendDeepEqual(sb, cl, className, hasLocalBaseClass);
+        }
+
+        sb.Append(
+            """
+            }
+            """);
+        AddSource($"{cl.Name}.g.cs", sb.ToString());
+    }
+
+    private void AppendDeepMap(StringBuilder sb, INamedTypeSymbol cl, string className, bool hasLocalBaseClass)
+    {
+        var attr = GetAttribute(cl, DeepMapAttribute!);
+        string modelType = attr != null ? attr.ConstructorArguments.FirstOrDefault().Value?.ToString() ?? "" : string.Empty;
+        INamedTypeSymbol? modelSymbol = Compilation.GetTypeByMetadataName(modelType);
+
+        sb.Append(
+            $$"""
+            
+                public readonly {{modelType}} Model;
+                
+                public {{cl.Name}}({{modelType}} model)
+                {
+                    Model = model;
+
+            """);
+        foreach (var prop in cl.GetMembers().OfType<IPropertySymbol>())
+        {
+            var propAttr = GetAttribute(prop, DeepMapPropertyAttribute!);
+            if (propAttr != null)
+            {
+                PropertyData propertyData = FindData(prop, propAttr, modelSymbol);
+                sb.AppendLine(CreateMapConstructorLine(propertyData));
+            }
+        }
+
+        sb.AppendLine(
+            """
+                }
+
+            """);
+
+        // loop over all properties 
+        foreach (var prop in cl.GetMembers().OfType<IPropertySymbol>())
+        {
+            var propAttr = GetAttribute(prop, DeepMapPropertyAttribute!);
+            if (propAttr != null)
+            {
+                PropertyData propertyData = FindData(prop, propAttr, modelSymbol);
+                sb.AppendLine(CreateMapSetterMethods(propertyData));
+            }
+        }
+    }
+
+    public string CreateMapSetterMethods(PropertyData propertyData)
+    {
+        return $"    // {propertyData.DataType}: vmName: {propertyData.ViewModelPropertyName} vmType: {propertyData.ViewModelPropertyType} mName: {propertyData.ModelPropertyName} mType: {propertyData.ModelPropertyType} converter: {propertyData.Converter}\r\n" +
+            propertyData.DataType switch
+            {
+                DataType.Error => string.Empty,
+                DataType.Simple =>
+                    $$"""
+                            partial void On{{propertyData.ViewModelPropertyName}}Changed({{propertyData.ViewModelPropertyType}} value)
+                            {
+                                Model.{{propertyData.ModelPropertyName}} = value;
+                            }
+
+                        """,
+                DataType.Model =>
+                    $$"""
+                            partial void On{{propertyData.ViewModelPropertyName}}Changed({{propertyData.ViewModelPropertyType}} value)
+                            {
+                                Model.{{propertyData.ModelPropertyName}} = value.Model;
+                            }
+
+                        """,
+                DataType.List =>
+                    $$"""
+                            private void On{{propertyData.ViewModelPropertyName}}CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+                            {
+                                Model.{{propertyData.ModelPropertyName}} ??= [];
+                                switch (e.Action)
+                                {
+                                case System.Collections.Specialized.NotifyCollectionChangedAction.Add when e.NewItems != null:
+                                    int index = e.NewStartingIndex;
+                                    foreach ({{propertyData.ViewModelPropertyType}} item in e.NewItems)
+                                    {
+                                        Model.{{propertyData.ModelPropertyName}}.Insert(index++, item);
+                                    }
+                                    break;
+                                case System.Collections.Specialized.NotifyCollectionChangedAction.Remove when e.OldItems != null:
+                                    foreach ({{propertyData.ViewModelPropertyType}} item in e.OldItems)
+                                    {
+                                         Model.{{propertyData.ModelPropertyName}}.Remove(item);
+                                    }
+                                    break;
+                                case System.Collections.Specialized.NotifyCollectionChangedAction.Move:
+                                    var modelToMove =  Model.{{propertyData.ModelPropertyName}}[e.OldStartingIndex];
+                                    Model.{{propertyData.ModelPropertyName}}.RemoveAt(e.OldStartingIndex);
+                                    Model.{{propertyData.ModelPropertyName}}.Insert(e.NewStartingIndex, modelToMove);
+                                    break;
+                                case System.Collections.Specialized.NotifyCollectionChangedAction.Replace when e.NewItems != null:
+                                    int replaceIndex = e.NewStartingIndex;
+                                    foreach ({{propertyData.ViewModelPropertyType}} item in e.NewItems)
+                                    {
+                                        Model.{{propertyData.ModelPropertyName}}[replaceIndex++] = item;
+                                    }
+                                    break;
+                                case System.Collections.Specialized.NotifyCollectionChangedAction.Reset:
+                                    Model.{{propertyData.ModelPropertyName}}.Clear();
+                                    foreach ({{propertyData.ViewModelPropertyType}} item in {{propertyData.ViewModelPropertyName}})
+                                    {
+                                        Model.{{propertyData.ModelPropertyName}}.Add(item);
+                                    }
+                                    break;
+                                }   
+                            }
+                         """,
+                DataType.ModelList =>
+                    $$"""
+                             private void On{{propertyData.ViewModelPropertyName}}CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+                             {
+                                Model.{{propertyData.ModelPropertyName}} ??= [];
+                                 switch (e.Action)
+                                 {
+                                 case System.Collections.Specialized.NotifyCollectionChangedAction.Add when e.NewItems != null:
+                                     int index = e.NewStartingIndex;
+                                     foreach ({{propertyData.ViewModelPropertyType}} vm in e.NewItems)
+                                     {
+                                         Model.{{propertyData.ModelPropertyName}}.Insert(index++, vm.Model);
+                                     }
+                                     break;
+                                 case System.Collections.Specialized.NotifyCollectionChangedAction.Remove when e.OldItems != null:
+                                     foreach ({{propertyData.ViewModelPropertyType}} vm in e.OldItems)
+                                     {
+                                          Model.{{propertyData.ModelPropertyName}}.Remove(vm.Model);
+                                     }
+                                     break;
+                                 case System.Collections.Specialized.NotifyCollectionChangedAction.Move:
+                                     var modelToMove =  Model.{{propertyData.ModelPropertyName}}[e.OldStartingIndex];
+                                     Model.{{propertyData.ModelPropertyName}}.RemoveAt(e.OldStartingIndex);
+                                     Model.{{propertyData.ModelPropertyName}}.Insert(e.NewStartingIndex, modelToMove);
+                                     break;
+                                 case System.Collections.Specialized.NotifyCollectionChangedAction.Replace when e.NewItems != null:
+                                     int replaceIndex = e.NewStartingIndex;
+                                     foreach ({{propertyData.ViewModelPropertyType}} vm in e.NewItems)
+                                     {
+                                         Model.{{propertyData.ModelPropertyName}}[replaceIndex++] = vm.Model;
+                                     }
+                                     break;
+                                 case System.Collections.Specialized.NotifyCollectionChangedAction.Reset:
+                                     Model.{{propertyData.ModelPropertyName}}.Clear();
+                                     foreach ({{propertyData.ViewModelPropertyType}} vm in {{propertyData.ViewModelPropertyName}})
+                                     {
+                                         Model.{{propertyData.ModelPropertyName}}.Add(vm.Model);
+                                     }
+                                     break;
+                                 }   
+                             }
+                         """,
+                DataType.ConverterFunc =>
+                    $$"""
+                            partial void On{{propertyData.ViewModelPropertyName}}Changed({{propertyData.ViewModelPropertyType}} value)
+                            {
+                                Model.{{propertyData.ModelPropertyName}} = Set{{propertyData.Converter}}(value);
+                            }
+                        """,
+                DataType.ConverterClass =>
+                    $$"""
+                            partial void On{{propertyData.ViewModelPropertyName}}Changed({{propertyData.ViewModelPropertyType}} value)
+                            {
+                                Model.{{propertyData.ModelPropertyName}} = ({{propertyData.ModelPropertyType}})new {{propertyData.Converter}}().ConvertBack({{propertyData.ViewModelPropertyName}});
+                            }
+                        """,
+                _ => throw new ArgumentOutOfRangeException(nameof(propertyData.DataType), propertyData.DataType, null)
+            };
+    }
+
+    private void AppendDeepCopy(StringBuilder sb, INamedTypeSymbol cl, string className, bool hasLocalBaseClass)
+    {
+        sb.Append(
+            $$"""
+                #region Deep Copy
+
+                public{{(hasLocalBaseClass ? " new" : "")}} {{className}} DeepCopy()
                 {
                     return DeepCopy(new Dictionary<object, object>(ReferenceEqualityComparer.Instance));
                 }
 
-                public{{(hasLocalBaseClass ? " new" : "")}} {{cl.Name}} DeepCopy(Dictionary<object, object>? visited)
+                public{{(hasLocalBaseClass ? " new" : "")}} {{className}} DeepCopy(Dictionary<object, object>? visited)
                 {
                     if (visited is not null && visited.TryGetValue(this, out var existing))
                     {
-                        return ({{cl.Name}})existing;
+                        return ({{className}})existing;
                     }
-                    var copy = new {{cl.Name}}();
+                    var copy = new {{className}}();
                     if (visited is not null)
                     {
                         visited[this] = copy;
@@ -72,7 +275,7 @@ partial class DeepExtensionsGenerator
                     return copy;
                 }
 
-                protected void DeepCopyTo({{cl.Name}} target, Dictionary<object, object> visited)
+                protected void DeepCopyTo({{className}} target, Dictionary<object, object> visited)
                 {
 
             """);
@@ -103,8 +306,235 @@ partial class DeepExtensionsGenerator
         sb.Append(
             """
                 }
-            }
+
+                #endregion
+
             """);
-        AddSource($"{cl.Name}.g.cs", sb.ToString());
     }
+
+    private void AppendDeepEqual(StringBuilder sb, INamedTypeSymbol cl, string className, bool hasLocalBaseClass)
+    {
+        sb.Append(
+            $$"""
+                #region Deep Equal
+
+                public bool IsDeepEqual({{cl.Name}} other)
+                {
+                    return 
+                        other is not null &&
+
+            """);
+        if (hasLocalBaseClass)
+        {
+            sb.AppendLine($"            base.IsDeepEqual(other) &&");
+        }
+
+        var properties = cl.GetMembers().OfType<IPropertySymbol>();
+        foreach (var prop in properties.Where(prop => !prop.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, DeepEqualIgnoreAttribute))))
+        {
+            TypeClass propType = ClassifyPropertyType(prop);
+            sb.Append("            ");
+            sb.AppendLine(propType switch
+            {
+                TypeClass.ReferenceArray => $"DeepComparer.CompareItems({prop.Name}, other.{prop.Name}) &&",
+                TypeClass.ValueArray => $"{prop.Name}.SequenceEqual(other.{prop.Name}) &&",
+                TypeClass.ReferenceList => $"DeepComparer.CompareItems({prop.Name}, other.{prop.Name}) &&",
+                TypeClass.ValueList => $"{prop.Name}.SequenceEqual(other.{prop.Name}) &&",
+                TypeClass.Reference => $"{prop.Name}.IsDeepEqual(other.{prop.Name}) &&",
+                TypeClass.NullableReference => $"({prop.Name} is null ? other.{prop.Name} is null : {prop.Name}.IsDeepEqual(other.{prop.Name})) &&",
+                TypeClass.Value => $"{prop.Name} == other.{prop.Name} &&",
+                _ => $"#warning Unknown type for property {prop.Name}, manual handling may be required."
+            });
+        }
+
+        sb.Append(
+            """
+                        true;
+                }
+
+                #endregion
+            
+            """);
+    }
+
+    public string CreateMapConstructorLine(PropertyData propertyData)
+    {
+        return $"        // {propertyData.DataType}: vmName: {propertyData.ViewModelPropertyName} vmType: {propertyData.ViewModelPropertyType.TrimEnd('?')} mName: {propertyData.ModelPropertyName} mType: {propertyData.ModelPropertyType.TrimEnd('?')} converter: {propertyData.Converter}\r\n" +
+            propertyData.DataType switch
+            {
+                DataType.Error => string.Empty,
+                DataType.Simple =>
+                    $"        {propertyData.ViewModelPropertyName} = model.{propertyData.ModelPropertyName};",
+                DataType.Model =>
+                    $"        {propertyData.ViewModelPropertyName} = model.{propertyData.ModelPropertyName} != null ? new {propertyData.ViewModelPropertyType.TrimEnd('?')}(model.{propertyData.ModelPropertyName}) : new {propertyData.ViewModelPropertyType.TrimEnd('?')}(new ());",
+                DataType.List =>
+                    $$"""
+                                {{propertyData.ViewModelPropertyName}} = [.. model.{{propertyData.ModelPropertyName}}];
+                                {{propertyData.ViewModelPropertyName}}.CollectionChanged += On{{propertyData.ViewModelPropertyName}}CollectionChanged;
+                        """,
+                DataType.ModelList =>
+                    $$"""
+                                {{propertyData.ViewModelPropertyName}} = [.. (model.{{propertyData.ModelPropertyName}} ?? []).Select(m => new {{propertyData.ViewModelPropertyType.TrimEnd('?')}}(m))];
+                                {{propertyData.ViewModelPropertyName}}.CollectionChanged += On{{propertyData.ViewModelPropertyName}}CollectionChanged;
+                        """,
+                DataType.ConverterFunc =>
+                    $"        {propertyData.ViewModelPropertyName} = Get{propertyData.Converter}(model.{propertyData.ModelPropertyName});",
+                DataType.ConverterClass =>
+                    $"        {propertyData.ViewModelPropertyName} = ({propertyData.ViewModelPropertyType.TrimEnd('?')})(new {propertyData.Converter}()).Convert(model.{propertyData.ModelPropertyName});",
+                _ => throw new ArgumentOutOfRangeException(nameof(propertyData.DataType), propertyData.DataType, null)
+            };
+    }
+
+    public enum DataType { Error, Simple, Model, List, ModelList, ConverterFunc, ConverterClass }
+
+    public DataType GetDataType(IPropertySymbol prop, AttributeData propAttr)
+    {
+        if (HasNamedArgument(propAttr, "Converter"))
+        {
+            return DataType.ConverterFunc;
+        }
+        else if (HasNamedArgument(propAttr, "ConverterType"))
+        {
+            return DataType.ConverterClass;
+        }
+        else if (IsObservableCollection(prop.Type))
+        {
+            var innerType = GetInnerType(prop.Type)!;
+            if (ImplementsInterface(innerType, "System.ComponentModel.INotifyPropertyChanged"))
+            {
+                // type is a ViewModel type, because it implements INotifyPropertyChanged
+                return DataType.ModelList;
+            }
+            else
+            {
+                return DataType.List;
+            }
+        }
+        else
+        {
+            if (ImplementsInterface(prop.Type, "System.ComponentModel.INotifyPropertyChanged"))
+            {
+                return DataType.Model;
+            }
+            else
+            {
+                return DataType.Simple;
+            }
+        }
+    }
+
+    public struct PropertyData
+    {
+        public DataType DataType { get; set; }
+        public string ViewModelPropertyName { get; set; }
+        public string ViewModelPropertyType { get; set; }
+        public string ModelPropertyName { get; set; }
+        public string ModelPropertyType { get; set; }
+        public string? Converter { get; set; }
+    }
+
+    private PropertyData FindData(IPropertySymbol prop, AttributeData propAttr, INamedTypeSymbol? modelSymbol)
+    {
+        DataType dataType = GetDataType(prop, propAttr);
+        string viewModelPropertyName = prop.Name;
+        string viewModelPropertyType = IsObservableCollection(prop.Type) ? GetInnerType(prop.Type)!.ToDisplayString() : prop.Type.ToDisplayString();
+
+        string modelPropertyName = propAttr.ConstructorArguments.FirstOrDefault().Value?.ToString() ?? prop.Name;
+        //string modelPropertyType = modelSymbol?.GetMembers(modelPropertyName).OfType<IPropertySymbol>().FirstOrDefault()?.Type.ToDisplayString()!;
+        string modelPropertyType = GetPropertyTypeRecursive(modelSymbol!, modelPropertyName);
+
+        string test = modelSymbol?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) ?? "null";
+        //debugString += $"\r\n    //{modelPropertyName} = {modelPropertyType} -------- {test}";
+
+        string? converterName = GetNamedArgument(propAttr, "Converter")?.Value.Value as string ?? null;
+        string? converterClassName = null; // = GetNamedArgument(propAttr, "ConverterType")?.Value.ToString() ?? null;
+
+        var converterArgument = GetNamedArgument(propAttr, "ConverterType");
+        if (converterArgument.HasValue && converterArgument.Value.Value.Value is ITypeSymbol typeSymbol)
+        {
+            // 3. Den vollständig qualifizierten Namen ermitteln
+            converterClassName = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        }
+
+        return new PropertyData
+        {
+            DataType = dataType,
+            ViewModelPropertyName = viewModelPropertyName,
+            ViewModelPropertyType = viewModelPropertyType,
+            ModelPropertyName = modelPropertyName,
+            ModelPropertyType = modelPropertyType,
+            Converter = converterName ?? converterClassName
+        };
+    }
+
+    public string GetPropertyTypeRecursive(ITypeSymbol symbol, string propertyName)
+    {
+        var currentSymbol = symbol;
+
+        // Schleife wandert die Vererbungskette nach oben (bis zu Object)
+        while (currentSymbol != null)
+        {
+            var property = currentSymbol.GetMembers(propertyName).OfType<IPropertySymbol>().FirstOrDefault();
+            if (property != null)
+            {
+                return property.Type.ToDisplayString();
+            }
+
+            // Eine Ebene nach oben in der Vererbung gehen
+            currentSymbol = currentSymbol.BaseType;
+        }
+
+        return string.Empty;
+    }
+
+    public bool IsObservableCollection(ITypeSymbol symbol) => symbol is INamedTypeSymbol namedType && namedType.IsGenericType && namedType.OriginalDefinition.ToDisplayString() == "System.Collections.ObjectModel.ObservableCollection<T>";
+
+    public ITypeSymbol? GetInnerType(ITypeSymbol symbol, int index = 0)
+    {
+        if (symbol is INamedTypeSymbol named && named.TypeArguments.Length > index)
+        {
+            var arg = named.TypeArguments[index];
+            // If the symbol is an unbound generic (type parameter) there's no concrete inner type:
+            if (arg is ITypeParameterSymbol)
+                return null;
+            return arg;
+        }
+
+        if (symbol is IArrayTypeSymbol arr)
+            return arr.ElementType;
+
+        if (symbol is IPointerTypeSymbol ptr)
+            return ptr.PointedAtType;
+        return null;
+    }
+
+    public bool ImplementsInterface(ITypeSymbol symbol, string interfaceFullyQualifiedName)
+    {
+        if (symbol.AllInterfaces.Any(i => i.ToDisplayString() == interfaceFullyQualifiedName))
+        {
+            return true;
+        }
+
+        if (symbol is INamedTypeSymbol namedType && namedType.ToDisplayString() == interfaceFullyQualifiedName)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    public bool HasNamedArgument(AttributeData data, string name) => data.NamedArguments.Any(a => a.Key == name);
+
+    public KeyValuePair<string, TypedConstant>? GetNamedArgument(AttributeData data, string name) => data.NamedArguments.FirstOrDefault(a => a.Key == name);
+
+
+    public AttributeData? GetAttribute(INamedTypeSymbol obj, INamedTypeSymbol attribute)
+    {
+        return obj.GetAttributes().FirstOrDefault(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, attribute));
+    }
+
+    public AttributeData? GetAttribute(IPropertySymbol obj, INamedTypeSymbol attribute)
+    {
+        return obj.GetAttributes().FirstOrDefault(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, attribute));
+    }
+
 }

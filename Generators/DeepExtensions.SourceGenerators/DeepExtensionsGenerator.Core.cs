@@ -40,36 +40,40 @@ public partial class DeepExtensionsGenerator : IIncrementalGenerator
         Compilation = tuple.Left;
         Syntax = tuple.Right;
         Classes = [.. tuple.Right.Where(i => i is ClassDeclarationSyntax).Cast<ClassDeclarationSyntax>()];         // OfType<string>();
-        try
-        {
-            context.AddSource("Statistc.g.cs",
-                $$"""
-                /*
-                Copy:  {{copyClassCollection?.Classes.Count() ?? 0}} 
-                    {{string.Join("\r\n    ", copyClassCollection?.Classes.Select(c => c.ToDisplayString()) ?? [])}}
-                Equal: {{equalClassCollection?.Classes.Count() ?? 0}} 
-                    {{string.Join("\r\n    ", equalClassCollection?.Classes.Select(c => c.ToDisplayString()) ?? [])}}
-                Map:   {{mapClassCollection?.Classes.Count() ?? 0}} 
-                    {{string.Join("\r\n    ", mapClassCollection?.Classes.Select(c => c.ToDisplayString()) ?? [])}}
-                */
-                """);
 
-            GenerateDeepCopy();
-            GenerateDeepEqual();
-            GenerateDeepMap();
-        }
-        catch (Exception ex)
-        {
-            var message = ex.ToString().Replace("/*", "/ *").Replace("*/", "* /");
-            context.AddSource($"Error_{Guid.NewGuid():N}.g.cs", $"/*\r\n{message}\r\n*/");
-        }
+        var classCollection = Collect();
+        Generate(classCollection);
+
+        //try
+        //{
+        //    context.AddSource("Statistc.g.cs",
+        //        $$"""
+        //        /*
+        //        Copy:  {{copyClassCollection?.Classes.Count() ?? 0}} 
+        //            {{string.Join("\r\n    ", copyClassCollection?.Classes.Select(c => c.ToDisplayString()) ?? [])}}
+        //        Equal: {{equalClassCollection?.Classes.Count() ?? 0}} 
+        //            {{string.Join("\r\n    ", equalClassCollection?.Classes.Select(c => c.ToDisplayString()) ?? [])}}
+        //        Map:   {{mapClassCollection?.Classes.Count() ?? 0}} 
+        //            {{string.Join("\r\n    ", mapClassCollection?.Classes.Select(c => c.ToDisplayString()) ?? [])}}
+        //        */
+        //        """);
+
+        //    GenerateDeepCopy();
+        //    GenerateDeepEqual();
+        //    GenerateDeepMap();
+        //}
+        //catch (Exception ex)
+        //{
+        //    var message = ex.ToString().Replace("/*", "/ *").Replace("*/", "* /");
+        //    context.AddSource($"Error_{Guid.NewGuid():N}.g.cs", $"/*\r\n{message}\r\n*/");
+        //}
     }
 
     protected SourceProductionContext Context { get; private set; }
 
     protected Compilation Compilation { get; private set; } = null!;
 
-    protected ImmutableArray<BaseTypeDeclarationSyntax> Syntax { get; private set; } = null!;
+    protected ImmutableArray<BaseTypeDeclarationSyntax> Syntax { get; private set; }
 
     //protected ImmutableArray<ClassDeclarationSyntax> Classes { get; private set; }
     protected ClassDeclarationSyntax[] Classes { get; private set; } = [];
