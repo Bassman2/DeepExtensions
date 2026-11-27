@@ -38,6 +38,7 @@ public partial class DeepExtensionsGenerator : IIncrementalGenerator
 
         Context = context;
         Compilation = tuple.Left;
+        Syntax = tuple.Right;
         Classes = [.. tuple.Right.Where(i => i is ClassDeclarationSyntax).Cast<ClassDeclarationSyntax>()];         // OfType<string>();
         try
         {
@@ -67,6 +68,8 @@ public partial class DeepExtensionsGenerator : IIncrementalGenerator
     protected SourceProductionContext Context { get; private set; }
 
     protected Compilation Compilation { get; private set; } = null!;
+
+    protected ImmutableArray<BaseTypeDeclarationSyntax> Syntax { get; private set; } = null!;
 
     //protected ImmutableArray<ClassDeclarationSyntax> Classes { get; private set; }
     protected ClassDeclarationSyntax[] Classes { get; private set; } = [];

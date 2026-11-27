@@ -4,8 +4,7 @@ using System.Text;
 
 namespace DeepExtensions.SourceGenerators;
 
-[Flags]
-public enum GenFlags { Copy = 1, Equal = 2, Map= 4 };
+
 
 partial class DeepExtensionsGenerator
 {
