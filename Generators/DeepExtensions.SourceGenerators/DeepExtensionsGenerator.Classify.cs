@@ -21,19 +21,7 @@ partial class DeepExtensionsGenerator
     private TypeClass ClassifyPropertyType(IPropertySymbol prop, bool isMap = false)
     {
         ITypeSymbol typeSymbol = prop.Type;
-        // Handle map-specific type classification
-        //if (deep)
-        //{
-        //    if (HasNamedArgument(propAttr, "Converter"))
-        //    {
-        //        return DataType.ConverterFunc;
-        //    }
-        //    else if (HasNamedArgument(propAttr, "ConverterType"))
-        //    {
-        //        return DataType.ConverterClass;
-        //    }
-        //}
-
+        
         // array data type
         if (typeSymbol is IArrayTypeSymbol arrayType)
         {
@@ -46,15 +34,21 @@ partial class DeepExtensionsGenerator
                 return TypeClass.ValueArray;
             }
         }
+        // single data Type
         else if (typeSymbol is INamedTypeSymbol namedType)
         {
 
-            var iListInterface = (typeSymbol as INamedTypeSymbol)?.AllInterfaces
-                .Prepend(typeSymbol as INamedTypeSymbol)
-                .FirstOrDefault(i => i?.IsGenericType == true && i.OriginalDefinition.ToDisplayString() == "System.Collections.Generic.IList<T>");
+            //var iListInterface = (typeSymbol as INamedTypeSymbol)?.AllInterfaces
+            //    .Prepend(typeSymbol as INamedTypeSymbol)
+            //    .FirstOrDefault(i => i?.IsGenericType == true && i.OriginalDefinition.ToDisplayString() == "System.Collections.Generic.IList<T>");
+            
+            var iListInterface = namedType.AllInterfaces
+                .Prepend(namedType)
+                .FirstOrDefault(i => i.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IList_T);
 
             var elementType = typeSymbol is IArrayTypeSymbol listType ? listType.ElementType : iListInterface?.TypeArguments.FirstOrDefault();
 
+            // reference type withou string
             if (elementType is INamedTypeSymbol namedElem && namedElem.IsReferenceType && namedElem.SpecialType != SpecialType.System_String)
             {
                 return TypeClass.ReferenceList;
@@ -63,6 +57,7 @@ partial class DeepExtensionsGenerator
             {
                 return TypeClass.ValueList;
             }
+            // 
             else if (namedType.IsReferenceType && namedType.SpecialType != SpecialType.System_String)
             {
                 // is nullable reference type

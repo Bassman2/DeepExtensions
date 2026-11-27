@@ -11,7 +11,7 @@ partial class DeepExtensionsGenerator
         }
     }
 
-    private string CreateInterfacesString(string className, GenFlags flags)
+    private string CreateInterfacesSnippet(string className, GenFlags flags)
     {
         string[] interfaces = [
             .. flags.HasFlag(GenFlags.Copy) ? [$"IDeepCopy<{className}>"] : Array.Empty<string>(),
@@ -24,16 +24,17 @@ partial class DeepExtensionsGenerator
     private void CreateDeepClassFile(INamedTypeSymbol cl, GenFlags flags)
     {
         string className = cl.Name;
-        //string classNamespace = cl.ContainingNamespace?.ToDisplayString() ?? string.Empty;
-        //string classNamespace = cl.ContainingNamespace?.ToDisplayString(FormatWithoutNullable) ?? string.Empty;
-        string classNamespace = cl.ContainingNamespace.IsGlobalNamespace ? string.Empty : cl.ContainingNamespace.ToDisplayString(FormatWithoutNullable);  // empty for global namespace
+        //string classNamespaceSnippet = cl.ContainingNamespace?.ToDisplayString() ?? string.Empty;
+        //string classNamespaceSnippet = cl.ContainingNamespace?.ToDisplayString(FormatWithoutNullable) ?? string.Empty;
+        //string classNamespace = cl.ContainingNamespace.IsGlobalNamespace ? string.Empty : cl.ContainingNamespace.ToDisplayString(FormatWithoutNullable);  // empty for global namespace
 
         bool hasLocalBaseClass = 
             cl.BaseType != null &&                                      // check if it has a base class
             cl.BaseType.SpecialType != SpecialType.System_Object &&     // check if base class is not object
             cl.BaseType.DeclaringSyntaxReferences.Length > 0;           // check if base class is in current assembly
 
-        string interfacesString = CreateInterfacesString(className, flags);  
+        string classNamespaceSnippet = cl.ContainingNamespace.IsGlobalNamespace ? string.Empty : $"namespace {cl.ContainingNamespace.ToDisplayString(FormatWithoutNullable)};";  // empty for global namespace
+        string interfacesSnippet = CreateInterfacesSnippet(className, flags);  
 
 
         StringBuilder sb = new(
@@ -48,9 +49,9 @@ partial class DeepExtensionsGenerator
             
             using DeepExtensions;
 
-            namespace {{classNamespace}};
+            {{classNamespaceSnippet}}
 
-            partial class {{className}} {{interfacesString}}
+            partial class {{className}} {{interfacesSnippet}}
             {
 
             """);
@@ -68,15 +69,124 @@ partial class DeepExtensionsGenerator
             AppendDeepEqual(sb, cl, className, hasLocalBaseClass);
         }
 
-        sb.Append(
-            """
-            }
-            """);
+        sb.AppendLine("}");
 
-        //AddSource($"{cl.Name}.g.cs", sb.ToString());
         string hintName = cl.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat).Replace("global::", "").Replace("<", "_").Replace(">", "_");
         AddSource($"{hintName}.g.cs", sb.ToString());
     }
+
+    private IEnumerable<(IPropertySymbol property, string propertyName, TypeClass propType)> LoopOverProperties(INamedTypeSymbol cl, INamedTypeSymbol ignoreAttibut) //, INamedTypeSymbol? parameterAttribut = 0)
+    {
+        return 
+            cl.GetMembers().
+            OfType<IPropertySymbol>().
+            Where(p => !p.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, ignoreAttibut))).
+            Select(p => (p, p.Name, ClassifyPropertyType(p)));
+    }
+   private void AppendDeepCopy(StringBuilder sb, INamedTypeSymbol cl, string className, bool hasLocalBaseClass)
+    {
+        sb.Append(
+            $$"""
+                #region Deep Copy
+
+                public{{(hasLocalBaseClass ? " new" : "")}} {{className}} DeepCopy()
+                {
+                    return DeepCopy(new Dictionary<object, object>(ReferenceEqualityComparer.Instance));
+                }
+
+                public{{(hasLocalBaseClass ? " new" : "")}} {{className}} DeepCopy(Dictionary<object, object>? visited)
+                {
+                    if (visited is not null && visited.TryGetValue(this, out var existing))
+                    {
+                        return ({{className}})existing;
+                    }
+                    var copy = new {{className}}();
+                    if (visited is not null)
+                    {
+                        visited[this] = copy;
+                    }
+                    DeepCopyTo(copy, visited);
+                    return copy;
+                }
+
+                protected void DeepCopyTo({{className}} target, Dictionary<object, object> visited)
+                {
+
+            """);
+
+        if (hasLocalBaseClass)
+        {
+            sb.AppendLine("        base.DeepCopyTo(target, visited);");
+        }
+
+        foreach ((IPropertySymbol prop, string propName, TypeClass propType) in LoopOverProperties(cl, DeepCopyIgnoreAttribute))
+        { 
+            sb.Append("        ");
+            sb.AppendLine(propType switch
+            {
+                TypeClass.ReferenceArray    /**/ => $"target.{propName} = DeepComparer.CopyItems(this.{propName});",
+                TypeClass.ValueArray        /**/ => $"target.{propName} = [.. this.{propName}];",
+                TypeClass.ReferenceList     /**/ => $"target.{propName} = [.. DeepComparer.CopyItems(this.{propName})];",
+                TypeClass.ValueList         /**/ => $"target.{propName} = [.. this.{propName}];",
+                TypeClass.Reference         /**/ => $"target.{propName} = this.{propName}.DeepCopy(visited);",
+                TypeClass.NullableReference /**/ => $"target.{propName} = this.{propName}?.DeepCopy(visited);",
+                TypeClass.Value             /**/ => $"target.{propName} = this.{propName};",
+                _ => $"#warning Unknown type for property {propName}, manual handling may be required."
+            });
+        }
+
+        sb.Append(
+            """
+                }
+
+                #endregion
+
+            """);
+    }
+
+    private void AppendDeepEqual(StringBuilder sb, INamedTypeSymbol cl, string className, bool hasLocalBaseClass)
+    {
+        sb.Append(
+            $$"""
+                #region Deep Equal
+
+                public bool IsDeepEqual({{cl.Name}} other)
+                {
+                    return 
+                        other is not null &&
+
+            """);
+        if (hasLocalBaseClass)
+        {
+            sb.AppendLine($"            base.IsDeepEqual(other) &&");
+        }
+
+        foreach ((IPropertySymbol prop, string propName, TypeClass propType) in LoopOverProperties(cl, DeepCopyIgnoreAttribute))
+        {
+            sb.Append("            ");
+            sb.AppendLine(propType switch
+            {
+                TypeClass.ReferenceArray    /**/ => $"DeepComparer.CompareItems({propName}, other.{propName}) &&",
+                TypeClass.ValueArray        /**/ => $"{propName}.SequenceEqual(other.{propName}) &&",
+                TypeClass.ReferenceList     /**/ => $"DeepComparer.CompareItems({propName}, other.{propName}) &&",
+                TypeClass.ValueList         /**/ => $"{propName}.SequenceEqual(other.{propName}) &&",
+                TypeClass.Reference         /**/ => $"{propName}.IsDeepEqual(other.{propName}) &&",
+                TypeClass.NullableReference /**/ => $"({propName} is null ? other.{propName} is null : {propName}.IsDeepEqual(other.{propName})) &&",
+                TypeClass.Value             /**/ => $"{propName} == other.{propName} &&",
+                _ => $"#warning Unknown type for property {propName}, manual handling may be required."
+            });
+        }
+
+        sb.Append(
+            """
+                        true;
+                }
+
+                #endregion
+            
+            """);
+    }
+
 
     private void AppendDeepMap(StringBuilder sb, INamedTypeSymbol cl, string className, bool hasLocalBaseClass)
     {
@@ -84,12 +194,14 @@ partial class DeepExtensionsGenerator
         string modelType = attr != null ? attr.ConstructorArguments.FirstOrDefault().Value?.ToString() ?? "" : string.Empty;
         INamedTypeSymbol? modelSymbol = Compilation.GetTypeByMetadataName(modelType);
 
+        // add constructor
+
         sb.Append(
             $$"""
             
                 public readonly {{modelType}} Model;
                 
-                public {{cl.Name}}({{modelType}} model)
+                public {{className}}({{modelType}} model)
                 {
                     Model = model;
 
@@ -246,113 +358,7 @@ partial class DeepExtensionsGenerator
             };
     }
 
-    private void AppendDeepCopy(StringBuilder sb, INamedTypeSymbol cl, string className, bool hasLocalBaseClass)
-    {
-        sb.Append(
-            $$"""
-                #region Deep Copy
 
-                public{{(hasLocalBaseClass ? " new" : "")}} {{className}} DeepCopy()
-                {
-                    return DeepCopy(new Dictionary<object, object>(ReferenceEqualityComparer.Instance));
-                }
-
-                public{{(hasLocalBaseClass ? " new" : "")}} {{className}} DeepCopy(Dictionary<object, object>? visited)
-                {
-                    if (visited is not null && visited.TryGetValue(this, out var existing))
-                    {
-                        return ({{className}})existing;
-                    }
-                    var copy = new {{className}}();
-                    if (visited is not null)
-                    {
-                        visited[this] = copy;
-                    }
-                    DeepCopyTo(copy, visited);
-                    return copy;
-                }
-
-                protected void DeepCopyTo({{className}} target, Dictionary<object, object> visited)
-                {
-
-            """);
-
-        if (hasLocalBaseClass)
-        {
-            sb.AppendLine("        base.DeepCopyTo(target, visited);");
-        }
-
-        var properties = cl.GetMembers().OfType<IPropertySymbol>();
-        foreach (var prop in properties.Where(prop => !prop.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, DeepCopyIgnoreAttribute))))
-        {
-            TypeClass propType = ClassifyPropertyType(prop);
-            sb.Append("        ");
-            sb.AppendLine(propType switch
-            {
-                TypeClass.ReferenceArray => $"target.{prop.Name} = DeepComparer.CopyItems(this.{prop.Name});",
-                TypeClass.ValueArray => $"target.{prop.Name} = [.. this.{prop.Name}];",
-                TypeClass.ReferenceList => $"target.{prop.Name} = [.. DeepComparer.CopyItems(this.{prop.Name})];",
-                TypeClass.ValueList => $"target.{prop.Name} = [.. this.{prop.Name}];",
-                TypeClass.Reference => $"target.{prop.Name} = this.{prop.Name}.DeepCopy(visited);",
-                TypeClass.NullableReference => $"target.{prop.Name} = this.{prop.Name}?.DeepCopy(visited);",
-                TypeClass.Value => $"target.{prop.Name} = this.{prop.Name};",
-                _ => $"#warning Unknown type for property {prop.Name}, manual handling may be required."
-            });
-        }
-
-        sb.Append(
-            """
-                }
-
-                #endregion
-
-            """);
-    }
-
-    private void AppendDeepEqual(StringBuilder sb, INamedTypeSymbol cl, string className, bool hasLocalBaseClass)
-    {
-        sb.Append(
-            $$"""
-                #region Deep Equal
-
-                public bool IsDeepEqual({{cl.Name}} other)
-                {
-                    return 
-                        other is not null &&
-
-            """);
-        if (hasLocalBaseClass)
-        {
-            sb.AppendLine($"            base.IsDeepEqual(other) &&");
-        }
-
-        var properties = cl.GetMembers().OfType<IPropertySymbol>();
-        foreach (var prop in properties.Where(prop => !prop.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, DeepEqualIgnoreAttribute))))
-        {
-            TypeClass propType = ClassifyPropertyType(prop);
-            sb.Append("            ");
-            sb.AppendLine(propType switch
-            {
-                TypeClass.ReferenceArray => $"DeepComparer.CompareItems({prop.Name}, other.{prop.Name}) &&",
-                TypeClass.ValueArray => $"{prop.Name}.SequenceEqual(other.{prop.Name}) &&",
-                TypeClass.ReferenceList => $"DeepComparer.CompareItems({prop.Name}, other.{prop.Name}) &&",
-                TypeClass.ValueList => $"{prop.Name}.SequenceEqual(other.{prop.Name}) &&",
-                TypeClass.Reference => $"{prop.Name}.IsDeepEqual(other.{prop.Name}) &&",
-                TypeClass.NullableReference => $"({prop.Name} is null ? other.{prop.Name} is null : {prop.Name}.IsDeepEqual(other.{prop.Name})) &&",
-                TypeClass.Value => $"{prop.Name} == other.{prop.Name} &&",
-                _ => $"#warning Unknown type for property {prop.Name}, manual handling may be required."
-            });
-        }
-
-        sb.Append(
-            """
-                        true;
-                }
-
-                #endregion
-            
-            """);
-    }
 
     public string CreateMapConstructorLine(PropertyData propertyData)
     {
