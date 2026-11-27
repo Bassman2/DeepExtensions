@@ -1,8 +1,35 @@
+
+
+
 # Deep Extensions
 
-The Deep Extensions are a collection of three Deep features based on Source Generation.
+Deep Extensions is a zero-reflection, AOT-compatible, and trimmable .NET library powered by Roslyn Source Generation. It eliminates boilerplate code with three core features:
 
-# Features
+* DeepCopy: Recursive object cloning with automatic circular reference handling.
+* DeepEqual: Recursive value-based equality comparisons.
+* DeepMap: Explicit Model-to-ViewModel synchronization supporting collections, custom property names, and value converters.
+ 
+Designed for seamless integration with CommunityToolkit.Mvvm, WPF, WinUI, and Avalonia, complete with built-in Roslyn analyzers for clear compiler diagnostics.
+
+## Table of Contents
+- [Features](#features)
+- [Installation](#installation)
+- [Built-in Roslyn analyzers & clear compiler diagnostics](#built-in-roslyn-analyzers--clear-compiler-diagnostics)
+- [Problems and Sulution](#problems-and-sulution)
+- [DeepCopy](#deepcopy)
+  - [Attributes](#attributes)
+  - [Examples](#examples)
+- [DeepEqual](#deepequal)
+  - [Attributes](#attributes-1)
+  - [Examples](#examples-1)
+- [DeepMap](#deepmap)
+  - [Attributes](#attributes-2)
+  - [Examples](#examples-2)
+- [Examples of use](#examples-of-use)
+  - [Undo and Redo with DeepCopy](#undo-and-redo-with-deepcopy)
+ 
+
+## Features
 * Roslyn Code Generator
 * AOT-compatible
 * Trimmable
@@ -10,7 +37,7 @@ The Deep Extensions are a collection of three Deep features based on Source Gene
 * WPF, WinUI, and Avalonia compatible.
 * Resolving circular references during deep copy
 
-# Installation
+## Installation
 
 #### Nuget Link
 [https://www.nuget.org/packages/DeepExtensions](https://www.nuget.org/packages/DeepExtensions)
@@ -22,31 +49,31 @@ The Deep Extensions are a collection of three Deep features based on Source Gene
 ```bash
 > dotnet add package DeepExtensions
 ```
-# Built-in Roslyn analyzers & clear compiler diagnostics
+## Built-in Roslyn analyzers & clear compiler diagnostics
 * DEEPGEN001 Class is not partial
 
-# Problems and Sulution
+## Problems and Sulution
 * In the event of issues caused by duplicate generation in nested libraries, the following may help:
 ```xml
 <PackageReference Include="DeepExtensions" Version="0.5.0" PrivateAssets="all" />
 ```
-# DeepCopy
+## DeepCopy
 
 Generates code for deep copy.
 
 An opt-out / automatic matching approach is used. This means that all properties not marked with [DeepCopyIgnore] will be copied.
 
-## Attributes
+### Attributes
 
-### [DeepCopy]
+#### [DeepCopy]
 
 The [DeepCopy] attribute only needs to be placed on the root element; it signals that a deep copy should be generated recursively for this class, all its base classes, and all its property classes.
 
-### [DeepCopyIgnore]
+#### [DeepCopyIgnore]
 
 All properties with [DeepCopyIgnore] will be ignored.
 
-## Example
+### Examples
 
 ```
 using DeepExtensions;
@@ -130,21 +157,23 @@ partial class BaseModel : IDeepCopy<BaseModel>
 }
 ```
 
-# DeepEqual
+## DeepEqual
 
 Generates code for deep equal.
 
 An opt-out / automatic matching approach is used. This means that all properties not marked with [DeepEqualIgnore] will be compared.
 
-### [DeepEqual]
+### Attributes
+
+#### [DeepEqual]
 
 The [DeepEqual] attribute only needs to be placed on the root element; it signals that a deep equal should be generated recursively for this class, all its base classes, and all its property classes.
 
-### [DeepEqualIgnore]
+#### [DeepEqualIgnore]
 
 All properties with [DeepEqualIgnore] will be ignored.
 
-## Example
+### Examples
 
 ```
 using DeepExtensions;
@@ -176,17 +205,19 @@ partial class DemoModel : IDeepEqual<DemoModel>
 }
 ```
 
-# DeepMap 
+## DeepMap 
 
 Mapping between Model and ViewModel trees
 * Custom converters
 
+### Attributes
+
 In contrast to DeepCopy and DeepEqual, this approach uses explicit opt-in. This means that all properties intended for mapping must be decorated with [DeepMapProperty].
 
-## Examples
-### Simple Types
+### Examples
+#### Simple Types
 Synchronizing properties with simple data types between the Model and the ViewModel. 
-#### Model
+##### Model
 ```
 using DeepExtensions;
 
@@ -197,7 +228,7 @@ public class DemoModel
     public string Name { get; set; } = "Peter";
 }
 ```
-#### ViewModel
+##### ViewModel
 
 for C# 13 / .NET 9 and CommunityToolkit.Mvvm 8.4+ only
 ```
@@ -214,9 +245,9 @@ public partial class DemoViewModel : ObservableObject
     public partial string Name { get; set; }
 }
 ```
-## List of Simple Types
+#### List of Simple Types
 Synchronizing properties with a list of simple data types between the Model and the ViewModel.
-#### Model
+##### Model
 ```
 namespace Demo.Models;
 
@@ -225,7 +256,7 @@ public class DemoModel
     public List<string> Names { get; set; } = [ "Peter", "Paul", "Mary"];
 }
 ```
-#### ViewModel
+##### ViewModel
 ```
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeepExtensions;
@@ -240,9 +271,9 @@ public partial class DemoViewModel : ObservableObject
     public ObservableCollection<string> Names { get; }
 }
 ```
-## Different Names
+#### Different Names
 Synchronizing properties with different names between Model and ViewModel.
-#### Model
+##### Model
 ```
 namespace Demo.Models;
 
@@ -251,7 +282,7 @@ public class DemoModel
     public string Name { get; set; } = "Peter";
 }
 ```
-#### ViewModel
+##### ViewModel
 ```
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeepExtensions;
@@ -266,9 +297,9 @@ public partial class DemoViewModel : ObservableObject
     public partial string FirstName { get; set; }
 }
 ```
-## Children
+#### Children
 Synchronizing properties with children between Model and ViewModel.
-#### Model
+##### Model
 ```
 namespace Demo.Models;
 
@@ -282,7 +313,7 @@ public class LeafModel
     public string Name { get; set; } = "Peter";
 }
 ```
-#### ViewModel
+##### ViewModel
 ```
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeepExtensions;
@@ -305,9 +336,9 @@ public partial class LeafViewModel : ObservableObject
     public partial string Name { get; set; }
 }
 ```
-## List of Children
+#### List of Children
 Synchronizing properties with a list of children between Model and ViewModel.
-#### Model
+##### Model
 ```
 namespace Demo.Models;
 
@@ -321,7 +352,7 @@ public class LeafModel
     public string Name { get; set; } = "Peter";
 }
 ```
-#### ViewModel
+##### ViewModel
 ```
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeepExtensions;
@@ -344,10 +375,10 @@ public partial class LeafViewModel : ObservableObject
     public partial string Name { get; set; }
 }
 ```
-## Converter Functions
+#### Converter Functions
 Synchronizing properties with converters between the Model and the ViewModel.
 The converters can also be applied to lists and "list to simpleType" mappings.
-#### Model
+##### Model
 ```
 namespace Demo.Models;
 
@@ -356,7 +387,7 @@ public class DemoModel
     public int Num { get; set; } = 25;
 }
 ```
-#### ViewModel
+##### ViewModel
 ```
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeepExtensions;
@@ -375,10 +406,10 @@ public partial class DemoViewModel : ObservableObject
 }
 ```
 
-## Converter Interface
+#### Converter Interface
 Synchronizing properties with converters between the Model and the ViewModel.
 The converters can also be applied to lists and "list to simpleType" mappings.
-#### Model
+##### Model
 ```
 namespace Demo.Models;
 
@@ -387,7 +418,7 @@ public class DemoModel
     public int Num { get; set; } = 25;
 }
 ```
-#### ViewModel
+##### ViewModel
 ```
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeepExtensions;
@@ -408,3 +439,72 @@ public partial class DemoViewModel : ObservableObject
     }
 }
 ``` 
+## Examples of use
+### Undo and Redo with DeepCopy
+```
+public partial class PlanController
+{
+#if DEBUG
+    private readonly bool IsHistoryEnabled = false;
+#else
+    private readonly bool IsHistoryEnabled = true;
+#endif
+
+    public PlanController()
+    {
+        var plan = Plan.New();
+        if (IsHistoryEnabled)
+        {
+            history.Add(plan);
+            CurrentPlan = plan.DeepCopy();
+        }
+        else
+        {
+            CurrentPlan = plan;
+        }
+    }
+
+    private readonly List<Plan> history = [];
+
+    private int historyPosition = 0;
+
+    public Plan CurrentPlan { get; private set; }
+
+    public bool CanUndo => IsHistoryEnabled && historyPosition > 0;
+
+    public bool CanRedo => IsHistoryEnabled && historyPosition < history.Count - 1;
+
+    public void Undo()
+    {
+        if (CanUndo)
+        {
+            CurrentPlan = history[--historyPosition].DeepCopy(); 
+            OnUpdateVisual();
+        }
+    }
+
+    public void Redo()
+    {
+        if (CanRedo)
+        {
+            CurrentPlan = history[++historyPosition].DeepCopy(); 
+            OnUpdateVisual();
+        }
+    }
+
+    private void Update()
+    {
+        if (!IsHistoryEnabled) return;
+
+        // remove eveything behind historyPosition
+        if (historyPosition < history.Count - 1)
+        {
+            history.RemoveRange(historyPosition + 1, history.Count - historyPosition - 1);
+        }
+
+        history.Add(CurrentPlan.DeepCopy());
+        historyPosition = history.Count - 1;
+
+    }
+}
+```
