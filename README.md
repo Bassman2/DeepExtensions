@@ -3,7 +3,13 @@
 
 # Deep Extensions
 
-The Deep Extensions are a collection of three Deep features based on Source Generation.
+Deep Extensions is a zero-reflection, AOT-compatible, and trimmable .NET library powered by Roslyn Source Generation. It eliminates boilerplate code with three core features:
+
+* DeepCopy: Recursive object cloning with automatic circular reference handling.
+* DeepEqual: Recursive value-based equality comparisons.
+* DeepMap: Explicit Model-to-ViewModel synchronization supporting collections, custom property names, and value converters.
+ 
+Designed for seamless integration with CommunityToolkit.Mvvm, WPF, WinUI, and Avalonia, complete with built-in Roslyn analyzers for clear compiler diagnostics.
 
 ## Table of Contents
 - [Features](#features)
