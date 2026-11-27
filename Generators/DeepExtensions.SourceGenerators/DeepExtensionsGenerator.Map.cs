@@ -33,8 +33,11 @@ partial class DeepExtensionsGenerator
         }
 
         sb.AppendLine(
-            """
+            $$"""
+                    Initialize(model);
                 }
+
+                partial void Initialize({{modelType}} model);
 
             """);
 
