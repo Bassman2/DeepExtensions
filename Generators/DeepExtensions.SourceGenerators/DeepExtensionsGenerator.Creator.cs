@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using static System.Net.Mime.MediaTypeNames;
-
-namespace DeepExtensions.SourceGenerators;
-
-
+﻿namespace DeepExtensions.SourceGenerators;
 
 partial class DeepExtensionsGenerator
 {
@@ -19,7 +11,7 @@ partial class DeepExtensionsGenerator
         }
     }
 
-    private string CreateInterfaces(string className, GenFlags flags)
+    private string CreateInterfacesString(string className, GenFlags flags)
     {
         string[] interfaces = [
             .. flags.HasFlag(GenFlags.Copy) ? [$"IDeepCopy<{className}>"] : Array.Empty<string>(),
@@ -31,16 +23,18 @@ partial class DeepExtensionsGenerator
     // from DeepCopy
     private void CreateDeepClassFile(INamedTypeSymbol cl, GenFlags flags)
     {
-        string classNamespace = cl.ContainingNamespace?.ToDisplayString(FormatWithoutNullable) ?? string.Empty;
-        bool hasLocalBaseClass = cl.BaseType != null && cl.BaseType.SpecialType != SpecialType.System_Object
-            && cl.BaseType.DeclaringSyntaxReferences.Length > 0; // check if in current assembly
-
-        //string classNamespace = cl.ContainingNamespace?.ToDisplayString() ?? string.Empty;
-
-
-        string interfaces = CreateInterfaces(cl.Name, flags);
-
         string className = cl.Name;
+        //string classNamespace = cl.ContainingNamespace?.ToDisplayString() ?? string.Empty;
+        //string classNamespace = cl.ContainingNamespace?.ToDisplayString(FormatWithoutNullable) ?? string.Empty;
+        string classNamespace = cl.ContainingNamespace.IsGlobalNamespace ? string.Empty : cl.ContainingNamespace.ToDisplayString(FormatWithoutNullable);  // empty for global namespace
+
+        bool hasLocalBaseClass = 
+            cl.BaseType != null &&                                      // check if it has a base class
+            cl.BaseType.SpecialType != SpecialType.System_Object &&     // check if base class is not object
+            cl.BaseType.DeclaringSyntaxReferences.Length > 0;           // check if base class is in current assembly
+
+        string interfacesString = CreateInterfacesString(className, flags);  
+
 
         StringBuilder sb = new(
             $$"""
@@ -56,7 +50,7 @@ partial class DeepExtensionsGenerator
 
             namespace {{classNamespace}};
 
-            partial class {{className}} {{interfaces}}
+            partial class {{className}} {{interfacesString}}
             {
 
             """);
@@ -78,7 +72,10 @@ partial class DeepExtensionsGenerator
             """
             }
             """);
-        AddSource($"{cl.Name}.g.cs", sb.ToString());
+
+        //AddSource($"{cl.Name}.g.cs", sb.ToString());
+        string hintName = cl.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat).Replace("global::", "").Replace("<", "_").Replace(">", "_");
+        AddSource($"{hintName}.g.cs", sb.ToString());
     }
 
     private void AppendDeepMap(StringBuilder sb, INamedTypeSymbol cl, string className, bool hasLocalBaseClass)
@@ -127,7 +124,7 @@ partial class DeepExtensionsGenerator
 
     public string CreateMapSetterMethods(PropertyData propertyData)
     {
-        return $"    // {propertyData.DataType}: vmName: {propertyData.ViewModelPropertyName} vmType: {propertyData.ViewModelPropertyType} mName: {propertyData.ModelPropertyName} mType: {propertyData.ModelPropertyType} converter: {propertyData.Converter}\r\n" +
+        return //$"    // {propertyData.DataType}: vmName: {propertyData.ViewModelPropertyName} vmType: {propertyData.ViewModelPropertyType} mName: {propertyData.ModelPropertyName} mType: {propertyData.ModelPropertyType} converter: {propertyData.Converter}\r\n" +
             propertyData.DataType switch
             {
                 DataType.Error => string.Empty,
