@@ -38,19 +38,19 @@ partial class DeepExtensionsGenerator
             sb.AppendLine("        base.DeepCopyTo(target, visited);");
         }
 
-        foreach ((IPropertySymbol prop, string propName, TypeClass propType) in LoopOverProperties(cl, DeepCopyIgnoreAttribute))
+        foreach (var p in LoopOverProperties(cl, DeepCopyIgnoreAttribute))
         {
             sb.Append("        ");
-            sb.AppendLine(propType switch
+            sb.AppendLine(p.PropType switch
             {
-                TypeClass.ReferenceArray    /**/ => $"target.{propName} = DeepComparer.CopyItems(this.{propName});",
-                TypeClass.ValueArray        /**/ => $"target.{propName} = [.. this.{propName}];",
-                TypeClass.ReferenceList     /**/ => $"target.{propName} = [.. DeepComparer.CopyItems(this.{propName})];",
-                TypeClass.ValueList         /**/ => $"target.{propName} = [.. this.{propName}];",
-                TypeClass.Reference         /**/ => $"target.{propName} = this.{propName}.DeepCopy(visited);",
-                TypeClass.NullableReference /**/ => $"target.{propName} = this.{propName}?.DeepCopy(visited);",
-                TypeClass.Value             /**/ => $"target.{propName} = this.{propName};",
-                _ => $"#warning Unknown type for property {propName}, manual handling may be required."
+                TypeClass.ReferenceArray    /**/ => $"target.{p.PropName} = DeepComparer.CopyItems(this.{p.PropName});",
+                TypeClass.ValueArray        /**/ => $"target.{p.PropName} = [.. this.{p.PropName}];",
+                TypeClass.ReferenceList     /**/ => $"target.{p.PropName} = [.. DeepComparer.CopyItems(this.{p.PropName})];",
+                TypeClass.ValueList         /**/ => $"target.{p.PropName} = [.. this.{p.PropName}];",
+                TypeClass.Reference         /**/ => $"target.{p.PropName} = this.{p.PropName}.DeepCopy(visited);",
+                TypeClass.NullableReference /**/ => $"target.{p.PropName} = this.{p.PropName}?.DeepCopy(visited);",
+                TypeClass.Value             /**/ => $"target.{p.PropName} = this.{p.PropName};",
+                _ => $"#warning Unknown type for property {p.PropName}, manual handling may be required."
             });
         }
 

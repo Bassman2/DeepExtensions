@@ -8,7 +8,7 @@ partial class DeepExtensionsGenerator
         string modelType = attr != null ? attr.ConstructorArguments.FirstOrDefault().Value?.ToString() ?? "" : string.Empty;
         INamedTypeSymbol? modelSymbol = Compilation.GetTypeByMetadataName(modelType);
 
-        List<(IPropertySymbol property, string propertyName, TypeClass propType)> propertyList = [.. LoopOverProperties(cl, DeepMapIgnoreAttribute)];
+        List<PropData> propertyList = [.. LoopOverProperties(cl, DeepMapIgnoreAttribute)];
         // add constructor
 
         sb.Append(
@@ -22,12 +22,12 @@ partial class DeepExtensionsGenerator
 
             """);
         
-        foreach ((IPropertySymbol prop, string propertyName, TypeClass propType) in propertyList)
+        foreach (var p in propertyList)
         {
-            var propAttr = GetAttribute(prop, DeepMapPropertyAttribute);
+            var propAttr = GetAttribute(p.Prop, DeepMapPropertyAttribute);
             if (propAttr != null)
             {
-                PropertyData propertyData = FindData(prop, propAttr, modelSymbol);
+                PropertyData propertyData = FindData(p.Prop, propAttr, modelSymbol);
                 sb.AppendLine(CreateMapConstructorLine(propertyData));
             }
         }
@@ -38,14 +38,12 @@ partial class DeepExtensionsGenerator
 
             """);
 
-        // loop over all properties 
-        //foreach (var prop in cl.GetMembers().OfType<IPropertySymbol>())
-        foreach ((IPropertySymbol prop, string propertyName, TypeClass propType) in propertyList)
+        foreach (var p in propertyList)
         {
-            var propAttr = GetAttribute(prop, DeepMapPropertyAttribute);
+            var propAttr = GetAttribute(p.Prop, DeepMapPropertyAttribute);
             if (propAttr != null)
             {
-                PropertyData propertyData = FindData(prop, propAttr, modelSymbol);
+                PropertyData propertyData = FindData(p.Prop, propAttr, modelSymbol);
                 sb.AppendLine(CreateMapSetterMethods(propertyData));
             }
         }

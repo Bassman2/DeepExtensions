@@ -19,19 +19,19 @@ partial class DeepExtensionsGenerator
             sb.AppendLine($"            base.IsDeepEqual(other) &&");
         }
 
-        foreach ((IPropertySymbol prop, string propName, TypeClass propType) in LoopOverProperties(cl, DeepCopyIgnoreAttribute))
+        foreach (var p in LoopOverProperties(cl, DeepCopyIgnoreAttribute))
         {
             sb.Append("            ");
-            sb.AppendLine(propType switch
+            sb.AppendLine(p.PropType switch
             {
-                TypeClass.ReferenceArray    /**/ => $"DeepComparer.CompareItems({propName}, other.{propName}) &&",
-                TypeClass.ValueArray        /**/ => $"{propName}.SequenceEqual(other.{propName}) &&",
-                TypeClass.ReferenceList     /**/ => $"DeepComparer.CompareItems({propName}, other.{propName}) &&",
-                TypeClass.ValueList         /**/ => $"{propName}.SequenceEqual(other.{propName}) &&",
-                TypeClass.Reference         /**/ => $"{propName}.IsDeepEqual(other.{propName}) &&",
-                TypeClass.NullableReference /**/ => $"({propName} is null ? other.{propName} is null : {propName}.IsDeepEqual(other.{propName})) &&",
-                TypeClass.Value             /**/ => $"{propName} == other.{propName} &&",
-                _ => $"#warning Unknown type for property {propName}, manual handling may be required."
+                TypeClass.ReferenceArray    /**/ => $"DeepComparer.CompareItems({p.PropName}, other.{p.PropName}) &&",
+                TypeClass.ValueArray        /**/ => $"{p.PropName}.SequenceEqual(other.{p.PropName}) &&",
+                TypeClass.ReferenceList     /**/ => $"DeepComparer.CompareItems({p.PropName}, other.{p.PropName}) &&",
+                TypeClass.ValueList         /**/ => $"{p.PropName}.SequenceEqual(other.{p.PropName}) &&",
+                TypeClass.Reference         /**/ => $"{p.PropName}.IsDeepEqual(other.{p.PropName}) &&",
+                TypeClass.NullableReference /**/ => $"({p.PropName} is null ? other.{p.PropName} is null : {p.PropName}.IsDeepEqual(other.{p.PropName})) &&",
+                TypeClass.Value             /**/ => $"{p.PropName} == other.{p.PropName} &&",
+                _ => $"#warning Unknown type for property {p.PropName}, manual handling may be required."
             });
         }
 

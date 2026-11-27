@@ -68,15 +68,26 @@ partial class DeepExtensionsGenerator
         AddSource($"{hintName}.g.cs", sb.ToString());
     }
 
-    private IEnumerable<(IPropertySymbol property, string propertyName, TypeClass propType)> LoopOverProperties(INamedTypeSymbol cl, INamedTypeSymbol ignoreAttibut) //, INamedTypeSymbol? parameterAttribut = 0)
+    private record struct PropData(IPropertySymbol Prop, string PropName, TypeClass PropType);
+
+    private IEnumerable<PropData> LoopOverProperties(INamedTypeSymbol cl, INamedTypeSymbol ignoreAttibut) 
     {
         return 
             cl.GetMembers().
             OfType<IPropertySymbol>().
             Where(p => !p.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, ignoreAttibut))).
-            Select(p => (p, p.Name, ClassifyPropertyType(p)));
+            Select(p => new PropData(p, p.Name, ClassifyPropertyType(p)));
     }
-      
+
+    private IEnumerable<PropData> LoopOverProperties(INamedTypeSymbol cl, INamedTypeSymbol ignoreAttibut, INamedTypeSymbol? parameterAttribut = null)
+    {
+        return
+            cl.GetMembers().
+            OfType<IPropertySymbol>().
+            Where(p => !p.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, ignoreAttibut))).
+            Select(p => new PropData(p, p.Name, ClassifyPropertyType(p)));
+    }
+
     public AttributeData? GetAttribute(IPropertySymbol obj, INamedTypeSymbol attribute)
     {
         return obj.GetAttributes().FirstOrDefault(attr => SymbolEqualityComparer.Default.Equals(attr.AttributeClass, attribute));
